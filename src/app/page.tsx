@@ -34,7 +34,7 @@ export default function Home() {
         
         const { data: playersData } = await supabase
           .from('players')
-          .select('*, team:teams(name)')
+          .select('id, name, goals, team:teams(name)')
           .order('goals', { ascending: false });
 
         if (teamsData && matchesData) {

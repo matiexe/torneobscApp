@@ -36,7 +36,7 @@ export default function AdminPage() {
     
     const { data: pData } = await supabase
       .from('players')
-      .select('*, team:teams(name)')
+      .select('id, name, goals, team:teams(name)')
       .order('goals', { ascending: false });
 
     const { data: tData } = await supabase.from('teams').select('*');
