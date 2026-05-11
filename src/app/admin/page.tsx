@@ -6,44 +6,11 @@ import { Match, Team } from '@/lib/standings';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Shield, Settings, Trophy, Image as ImageIcon, Users, Plus, LogOut, LayoutDashboard, Flag, Share2, Trash2 } from 'lucide-react';
-
-// ... (fetchData and other functions)
-
-  async function deletePlayer(playerId: string) {
-    if (!confirm('¿Estás seguro de eliminar este jugador? Esta acción no se puede deshacer.')) return;
-    
-    const { error } = await supabase
-      .from('players')
-      .delete()
-      .eq('id', playerId);
-
-    if (error) {
-      console.error(error);
-      alert('Error al eliminar el jugador');
-    } else {
-      fetchData();
-    }
-  }
-
-  async function deleteTeam(teamId: string) {
-    if (!confirm('¿Estás seguro de eliminar este equipo? Se podrían ver afectados los partidos asociados.')) return;
-    
-    const { error } = await supabase
-      .from('teams')
-      .delete()
-      .eq('id', teamId);
-
-    if (error) {
-      console.error(error);
-      alert('Error al eliminar el equipo (Asegúrate de que no tenga partidos asociados)');
-    } else {
-      fetchData();
-    }
-  }
 import { MatchScoreForm } from '@/components/shared/MatchScoreForm';
 import { TeamEditForm } from '@/components/shared/TeamEditForm';
 import { PlayerAddForm } from '@/components/shared/PlayerAddForm';
 import { useRouter } from 'next/navigation';
+import { getTeamLogo } from '@/lib/utils';
 
 interface Player {
   id: string;
@@ -105,19 +72,59 @@ export default function AdminPage() {
     fetchData();
   }
 
+  async function deletePlayer(playerId: string) {
+    if (!confirm('¿Estás seguro de eliminar este jugador? Esta acción no se puede deshacer.')) return;
+    
+    const { error } = await supabase
+      .from('players')
+      .delete()
+      .eq('id', playerId);
+
+    if (error) {
+      console.error(error);
+      alert('Error al eliminar el jugador');
+    } else {
+      fetchData();
+    }
+  }
+
+  async function deleteTeam(teamId: string) {
+    if (!confirm('¿Estás seguro de eliminar este equipo? Se podrían ver afectados los partidos asociados.')) return;
+    
+    const { error } = await supabase
+      .from('teams')
+      .delete()
+      .eq('id', teamId);
+
+    if (error) {
+      console.error(error);
+      alert('Error al eliminar el equipo (Asegúrate de que no tenga partidos asociados)');
+    } else {
+      fetchData();
+    }
+  }
+
+  async function deleteMatch(matchId: string) {
+    if (!confirm('¿Estás seguro de eliminar este partido?')) return;
+    
+    const { error } = await supabase
+      .from('matches')
+      .delete()
+      .eq('id', matchId);
+
+    if (error) {
+      console.error(error);
+      alert('Error al eliminar el partido');
+    } else {
+      fetchData();
+    }
+  }
+
   async function handleLogout() {
     await supabase.auth.signOut();
     router.push('/login');
     router.refresh();
   }
-
-  const getTeamLogo = (teamName: string | undefined) => {
-    if (!teamName) return null;
-    const slug = teamName.toLowerCase()
-      .replace(/\s+/g, '_')
-      .replace(/ñ/g, 'n');
-    return `/logos/${slug}.png`;
-  };
 
   if (loading) return (
     <div className="flex flex-col justify-center items-center h-screen bg-[#111415] text-[#e9c176]">
@@ -221,9 +228,8 @@ export default function AdminPage() {
                 if (navigator.share) {
                   await navigator.share(shareData);
                 } else {
-                  // Fallback: copiar al portapapeles
                   await navigator.clipboard.writeText(shareUrl);
-                  alert('Enlace del banner copiado al portapapeles (Tu navegador no soporta compartir directamente)');
+                  alert('Enlace del banner copiado al portapapeles');
                 }
               } catch (err) {
                 console.error('Error al compartir:', err);
@@ -251,7 +257,7 @@ export default function AdminPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {matches.filter(m => m.status === 'pending').map(match => (
-                  <MatchScoreForm key={match.id} match={match} onSave={updateScore} />
+                  <MatchScoreForm key={match.id} match={match} onSave={updateScore} onDelete={deleteMatch} />
                 ))}
               </div>
 
@@ -260,7 +266,7 @@ export default function AdminPage() {
                   <h4 className="font-anybody text-sm font-bold text-[#c5c6cd] uppercase tracking-widest pt-4">Resultados Recientes</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {matches.filter(m => m.status === 'finished').slice(-4).map(match => (
-                      <MatchScoreForm key={match.id} match={match} onSave={updateScore} />
+                      <MatchScoreForm key={match.id} match={match} onSave={updateScore} onDelete={deleteMatch} />
                     ))}
                   </div>
                 </>
@@ -281,7 +287,7 @@ export default function AdminPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {teams.map(team => (
-                <TeamEditForm key={team.id} team={team} onSave={fetchData} />
+                <TeamEditForm key={team.id} team={team} onSave={fetchData} onDelete={deleteTeam} />
               ))}
             </div>
           </div>
@@ -316,14 +322,14 @@ export default function AdminPage() {
                 <div key={player.id} className="flex items-center justify-between gap-4 p-4 hover:bg-[#e9c176]/5 transition-colors">
                   <div className="flex items-center gap-3 flex-1 overflow-hidden">
                     <div className="w-10 h-10 rounded-lg border border-[#44474d]/30 bg-white/5 p-1 flex items-center justify-center overflow-hidden shrink-0">
-                      <img src={player.team_id ? teams.find(t => t.id === player.team_id)?.logo_url || getTeamLogo(player.team?.name) || '' : ''} alt="" className="w-full h-full object-contain" />
+                      <img src={getTeamLogo(player.team?.name)} alt="" className="w-full h-full object-contain" />
                     </div>
                     <div className="overflow-hidden">
                       <p className="font-anybody font-bold text-white uppercase italic text-sm truncate">{player.name}</p>
                       <p className="font-lexend text-[9px] font-bold text-[#c5c6cd] uppercase tracking-wider truncate">{player.team?.name}</p>
                     </div>
                   </div>
-                    <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3">
                     <input 
                       type="number" 
                       className="w-14 h-10 bg-[#0c0f10] border border-[#e9c176]/20 text-[#e9c176] text-center font-anybody font-black text-lg rounded-lg focus:outline-none focus:border-[#e9c176] transition-colors"

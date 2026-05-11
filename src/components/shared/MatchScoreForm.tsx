@@ -6,14 +6,15 @@ import { Match } from '@/lib/standings';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Check, Loader2 } from 'lucide-react';
+import { Check, Loader2, Trash2 } from 'lucide-react';
 
 interface MatchScoreFormProps {
   match: Match;
   onSave: (id: string, h: number, a: number) => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
 }
 
-export function MatchScoreForm({ match, onSave }: MatchScoreFormProps) {
+export function MatchScoreForm({ match, onSave, onDelete }: MatchScoreFormProps) {
   const [h, setH] = useState(match.home_score?.toString() || '');
   const [a, setA] = useState(match.away_score?.toString() || '');
   const [saving, setSaving] = useState(false);
@@ -40,13 +41,25 @@ export function MatchScoreForm({ match, onSave }: MatchScoreFormProps) {
         <span className="font-lexend text-[10px] font-bold text-[#e9c176] uppercase tracking-[0.2em]">
           {new Date(match.match_date).toLocaleDateString()}
         </span>
-        <Badge className={`border-none text-[8px] font-black uppercase tracking-widest px-2 py-0.5 ${
-          match.status === 'finished' 
-            ? 'bg-[#4ade80]/10 text-[#4ade80]' 
-            : 'bg-[#e9c176]/10 text-[#e9c176] animate-pulse'
-        }`}>
-          {match.status === 'finished' ? 'Finalizado' : 'Pendiente'}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge className={`border-none text-[8px] font-black uppercase tracking-widest px-2 py-0.5 ${
+            match.status === 'finished' 
+              ? 'bg-[#4ade80]/10 text-[#4ade80]' 
+              : 'bg-[#e9c176]/10 text-[#e9c176] animate-pulse'
+          }`}>
+            {match.status === 'finished' ? 'Finalizado' : 'Pendiente'}
+          </Badge>
+          {onDelete && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-[#ffb4ab]/50 hover:bg-[#ffb4ab]/10 hover:text-[#ffb4ab] h-6 w-6"
+              onClick={() => onDelete(match.id)}
+            >
+              <Trash2 className="w-3 h-3" />
+            </Button>
+          )}
+        </div>
       </div>
       
       <div className="grid grid-cols-7 items-center gap-2 mb-6">
