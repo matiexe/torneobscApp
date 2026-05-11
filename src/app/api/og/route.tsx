@@ -42,18 +42,34 @@ export async function GET(req: Request) {
     
     const stadiumBg = "https://lh3.googleusercontent.com/aida-public/AB6AXuD90YWGTIuE4pXrMvpgTC5Ec916IlJgzD__bgevi2Livcu29Y18xN8x0QkITBNHs8EB9HcsZ3_RJ19HQRR8TvS3ISdpvn2oGoMVfriILRHO4Bpl8cOV1RaBMtK9wlsze1bfyr1dJYxe5yHkOavF79WDJ7ouuqJMwoW7F7VokqSbc5GHGDcvZ9bl42IfpWhMG7A_qdf46OPWWhXMoDAipoBBZv2er_Okpzjjmuc64QON9iJL3DVdqRbuDfyflVDOgfwY8nvIpcoPxN4";
 
+    // Función para obtener la imagen como base64
+    const getBase64Image = async (url: string) => {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) return null;
+        const buffer = await response.arrayBuffer();
+        const base64 = Buffer.from(buffer).toString('base64');
+        const contentType = response.headers.get('content-type') || 'image/png';
+        return `data:${contentType};base64,${base64}`;
+      } catch (e) {
+        console.error(`Error fetching image: ${url}`, e);
+        return null;
+      }
+    };
+
     const getTeamLogoUrl = (team: any) => {
-      // Si tiene una URL completa en la DB, usarla
       if (team.logo_url && team.logo_url.startsWith('http')) return team.logo_url;
-      
-      // Si no, construirla basándonos en el slug y la URL base actual (usando la misma lógica que lib/utils)
       const slug = team.name.toLowerCase()
         .replace(/\s+/g, '_')
         .replace(/ñ/g, 'n')
         .replace(/[^a-z0-9_]/g, '');
-      
       return `${baseUrl}/logos/${slug}.png`;
     };
+
+    // Obtener las imágenes en base64 antes de renderizar
+    const leagueLogoBase64 = await getBase64Image(`${baseUrl}/logos/league_logo.png`);
+    const homeLogoBase64 = await getBase64Image(getTeamLogoUrl(match.home_team));
+    const awayLogoBase64 = await getBase64Image(getTeamLogoUrl(match.away_team));
 
     const date = new Date(match.match_date).toLocaleDateString('es-ES', {
       weekday: 'long',
@@ -103,7 +119,7 @@ export async function GET(req: Request) {
             zIndex: 10 
           }}>
              <div style={{ display: 'flex', background: '#604403aa', padding: '15px', borderRadius: '50%', border: '2px solid #e9c176', marginBottom: '20px' }}>
-                <img src={`${baseUrl}/logos/league_logo.png`} width="100" height="100" style={{ objectFit: 'contain' }} />
+                {leagueLogoBase64 && <img src={leagueLogoBase64} width="100" height="100" style={{ objectFit: 'contain' }} />}
              </div>
              <p style={{ color: '#e9c176', fontSize: 24, fontWeight: 'bold', letterSpacing: '8px', marginBottom: '10px' }}>SÚPER LIGA BSC</p>
              <div style={{ height: '4px', width: '120px', background: '#e9c176' }}></div>
@@ -121,7 +137,7 @@ export async function GET(req: Request) {
             {/* Home Team */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '40px' }}>
               <div style={{ display: 'flex', width: '280px', height: '280px', background: 'rgba(255,255,255,0.05)', borderRadius: '40px', border: '2px solid #e9c17644', alignItems: 'center', justifyContent: 'center', padding: '30px', marginBottom: '20px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
-                <img src={getTeamLogoUrl(match.home_team)} width="200" height="200" style={{ objectFit: 'contain' }} />
+                {homeLogoBase64 && <img src={homeLogoBase64} width="200" height="200" style={{ objectFit: 'contain' }} />}
               </div>
               <h2 style={{ fontSize: 54, color: 'white', fontWeight: '900', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '-2px' }}>{match.home_team.name}</h2>
             </div>
@@ -136,7 +152,7 @@ export async function GET(req: Request) {
             {/* Away Team */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '40px' }}>
               <div style={{ display: 'flex', width: '280px', height: '280px', background: 'rgba(255,255,255,0.05)', borderRadius: '40px', border: '2px solid #e9c17644', alignItems: 'center', justifyContent: 'center', padding: '30px', marginBottom: '20px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
-                <img src={getTeamLogoUrl(match.away_team)} width="200" height="200" style={{ objectFit: 'contain' }} />
+                {awayLogoBase64 && <img src={awayLogoBase64} width="200" height="200" style={{ objectFit: 'contain' }} />}
               </div>
               <h2 style={{ fontSize: 54, color: 'white', fontWeight: '900', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '-2px' }}>{match.away_team.name}</h2>
             </div>
