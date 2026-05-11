@@ -21,7 +21,7 @@ export default function Home() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [standings, setStandings] = useState<StandingEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'home' | 'standings' | 'fixture' | 'scorers'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'standings' | 'results' | 'fixture'>('home');
 
   useEffect(() => {
     async function fetchData() {
@@ -184,29 +184,13 @@ export default function Home() {
                 </div>
 
                 <div className="lg:col-span-4 space-y-6">
-                  {/* Leading Scorer Card */}
-                  <div className="glass-panel rounded-xl overflow-hidden p-6 relative group border-[#e9c176]/20">
-                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
-                      <Trophy className="w-20 h-20 text-[#e9c176]" />
+                  {/* Top 5 Scorers Card */}
+                  <div className="glass-panel rounded-xl overflow-hidden p-6 border-[#e9c176]/20">
+                    <div className="flex items-center justify-between mb-6">
+                      <h4 className="font-anybody text-lg font-bold text-[#e9c176] uppercase italic">Goleadores</h4>
+                      <Trophy className="w-5 h-5 text-[#e9c176] opacity-50" />
                     </div>
-                    <h4 className="font-lexend font-bold text-[#e9c176] uppercase tracking-widest text-[10px] mb-4">Goleador del Torneo</h4>
-                    {players.length > 0 ? (
-                      <div className="flex items-center gap-4 relative z-10">
-                        <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[#e9c176]/40 to-transparent p-[1px]">
-                          <div className="w-full h-full bg-[#1d2021] rounded-xl flex items-center justify-center overflow-hidden">
-                            <img src={getTeamLogo(players[0].team?.name) || ''} alt="" className="w-10 h-10 object-contain" />
-                          </div>
-                        </div>
-                        <div>
-                          <p className="font-anybody text-xl font-bold text-white uppercase italic">{players[0].name}</p>
-                          <p className="text-[#e9c176] font-lexend text-[10px] uppercase font-bold">{players[0].team?.name}</p>
-                        </div>
-                        <div className="ml-auto text-right">
-                          <span className="block font-anybody text-3xl font-black text-[#e9c176] italic">{players[0].goals}</span>
-                          <span className="text-[10px] font-bold text-[#c5c6cd] uppercase">Goles</span>
-                        </div>
-                      </div>
-                    ) : <p className="text-xs text-[#c5c6cd]">Cargando goleador...</p>}
+                    <ScorersList players={players.slice(0, 5)} />
                   </div>
 
                   {/* Quick Info Box */}
@@ -232,13 +216,26 @@ export default function Home() {
           </div>
         )}
 
-        {activeTab === 'scorers' && (
+        {activeTab === 'results' && (
           <div className="animate-in slide-in-from-bottom duration-500 max-w-4xl mx-auto">
              <div className="mb-8 relative overflow-hidden rounded-xl metallic-border p-8 text-center bg-[#191c1d] border-b-2 border-[#e9c176]">
-               <h2 className="font-anybody text-4xl font-black gold-gradient-text uppercase mb-2">Máximos Artilleros</h2>
+               <h2 className="font-anybody text-4xl font-black gold-gradient-text uppercase mb-2">Resultados Finales</h2>
                <p className="font-anybody text-[#c5c6cd] tracking-[0.2em] uppercase text-xs">Temporada 2026</p>
              </div>
-             <ScorersList players={players} />
+             <div className="grid gap-4">
+                {matches.filter(m => m.status === 'finished').length > 0 ? (
+                  matches.filter(m => m.status === 'finished')
+                    .sort((a, b) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime())
+                    .map(match => (
+                      <MatchCard key={match.id} match={match} type="result" />
+                    ))
+                ) : (
+                  <div className="text-center py-20 glass-panel rounded-xl border-dashed border-[#e9c176]/20">
+                    <Swords className="w-12 h-12 text-[#e9c176]/20 mx-auto mb-4" />
+                    <p className="text-[#c5c6cd] font-anybody uppercase tracking-widest text-sm">No hay resultados registrados aún</p>
+                  </div>
+                )}
+             </div>
           </div>
         )}
 
@@ -280,7 +277,7 @@ export default function Home() {
         {[
           { id: 'home', label: 'Inicio', icon: Trophy },
           { id: 'standings', label: 'Tabla', icon: ListOrdered },
-          { id: 'scorers', label: 'Goles', icon: Users },
+          { id: 'results', label: 'Resultados', icon: Swords },
           { id: 'fixture', label: 'Fixture', icon: Calendar },
         ].map((tab) => (
           <button
