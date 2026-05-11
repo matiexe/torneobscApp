@@ -190,7 +190,7 @@ export default function Home() {
                       <h4 className="font-anybody text-lg font-bold text-[#e9c176] uppercase italic">Goleadores</h4>
                       <Trophy className="w-5 h-5 text-[#e9c176] opacity-50" />
                     </div>
-                    <ScorersList players={players.slice(0, 5)} />
+                    <ScorersList players={players.slice(0, 5)} variant="compact" />
                   </div>
 
                   {/* Quick Info Box */}

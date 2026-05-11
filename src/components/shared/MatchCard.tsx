@@ -19,8 +19,8 @@ export function MatchCard({ match, type }: MatchCardProps) {
     return (
       <div className="match-card-gradient border border-[#44474d]/30 rounded-xl p-4 flex flex-col gap-3">
         <div className="flex justify-between items-center text-[10px] text-[#c5c6cd] font-bold uppercase border-b border-[#44474d]/20 pb-2">
-          <span>Finalizado</span>
-          <span className="text-[#ffb4ab]">Live Score</span>
+          <span className="text-[#e9c176]">Resultado Final</span>
+          <span>Temporada 2026</span>
         </div>
         <div className="flex items-center justify-between">
           <div className="flex flex-col items-center flex-1 overflow-hidden">
