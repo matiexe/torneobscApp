@@ -64,7 +64,7 @@ export function PlayerAddForm({ teams, onSave }: PlayerAddFormProps) {
         
         <div className="md:col-span-4">
           <label className="text-[10px] font-bold uppercase text-[#e9c176] tracking-widest ml-1 mb-2 block">Equipo</label>
-          <Select value={teamId} onValueChange={setTeamId}>
+          <Select value={teamId} onValueChange={(val) => val && setTeamId(val)}>
             <SelectTrigger className="bg-[#0c0f10] border-[#e9c176]/20 h-12 text-white rounded-xl focus:ring-[#e9c176] focus:border-[#e9c176]">
               <SelectValue placeholder="Seleccionar equipo" />
             </SelectTrigger>
