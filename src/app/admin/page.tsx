@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Match, Team } from '@/lib/standings';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Shield, Settings, Trophy, Image as ImageIcon, Users, Plus, LogOut, LayoutDashboard, Flag } from 'lucide-react';
+import { Shield, Settings, Trophy, Image as ImageIcon, Users, Plus, LogOut, LayoutDashboard, Flag, Share2 } from 'lucide-react';
 import { MatchScoreForm } from '@/components/shared/MatchScoreForm';
 import { TeamEditForm } from '@/components/shared/TeamEditForm';
 import { PlayerAddForm } from '@/components/shared/PlayerAddForm';
@@ -168,17 +168,36 @@ export default function AdminPage() {
           </Button>
 
           <Button 
-            className="bg-[#25D366] hover:bg-[#20ba56] hover:scale-[1.02] transition-transform text-white font-anybody font-black uppercase italic tracking-tighter h-16 rounded-xl shadow-xl shadow-[#25D366]/10 gap-3 border-none" 
-            onClick={() => {
+            className="bg-[#3b82f6] hover:bg-[#2563eb] hover:scale-[1.02] transition-transform text-white font-anybody font-black uppercase italic tracking-tighter h-16 rounded-xl shadow-xl shadow-[#3b82f6]/10 gap-3 border-none" 
+            onClick={async () => {
               const nextMatch = matches.find(m => m.status === 'pending');
-              const text = nextMatch 
-                ? `¡No te pierdas el próximo partido de la Súper Liga BSC! 🏆\n\n⚽ *${nextMatch.home_team?.name} vs ${nextMatch.away_team?.name}*\n📅 ${new Date(nextMatch.match_date).toLocaleDateString()}\n🏟️ La Curtiembre\n\nMira todo el fixture aquí: ${window.location.origin}`
-                : `Sigue la Súper Liga BSC en vivo. Mira la tabla y el fixture aquí: ${window.location.origin}`;
-              window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+              const shareUrl = nextMatch 
+                ? `${window.location.origin}/api/og?matchId=${nextMatch.id}`
+                : `${window.location.origin}/api/og`;
+              
+              const shareData = {
+                title: 'Súper Liga BSC - Próximo Partido',
+                text: nextMatch 
+                  ? `¡No te pierdas el próximo partido!\n⚽ ${nextMatch.home_team?.name} vs ${nextMatch.away_team?.name}\n🏟️ La Curtiembre`
+                  : 'Sigue la Súper Liga BSC en vivo.',
+                url: shareUrl,
+              };
+
+              try {
+                if (navigator.share) {
+                  await navigator.share(shareData);
+                } else {
+                  // Fallback: copiar al portapapeles
+                  await navigator.clipboard.writeText(shareUrl);
+                  alert('Enlace del banner copiado al portapapeles (Tu navegador no soporta compartir directamente)');
+                }
+              } catch (err) {
+                console.error('Error al compartir:', err);
+              }
             }}
           >
-            <Users className="w-5 h-5" />
-            Compartir en WhatsApp
+            <Share2 className="w-5 h-5" />
+            Compartir Banner
           </Button>
         </section>
 
