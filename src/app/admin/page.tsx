@@ -187,7 +187,14 @@ export default function AdminPage() {
                   </h3>
                   <Button 
                     className="w-full bg-white/5 hover:bg-[#e9c176] hover:text-black border border-[#e9c176]/20 h-12 text-[10px] font-black uppercase italic"
-                    onClick={() => window.open('/api/og', '_blank')}
+                    onClick={() => {
+                      const nextMatch = matches.find(m => m.status === 'pending');
+                      if (nextMatch) {
+                        window.open(`/api/og?matchId=${nextMatch.id}`, '_blank');
+                      } else {
+                        window.open('/api/og', '_blank');
+                      }
+                    }}
                   >
                     Generar Banner Próximo Partido
                   </Button>
