@@ -18,18 +18,29 @@ CREATE TABLE matches (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Create players table
+CREATE TABLE players (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  team_id UUID REFERENCES teams(id) NOT NULL,
+  goals INTEGER DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Enable RLS
 ALTER TABLE teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE matches ENABLE ROW LEVEL SECURITY;
+ALTER TABLE players ENABLE ROW LEVEL SECURITY;
 
 -- Public read access
 CREATE POLICY "Public Read Access Teams" ON teams FOR SELECT USING (true);
 CREATE POLICY "Public Read Access Matches" ON matches FOR SELECT USING (true);
+CREATE POLICY "Public Read Access Players" ON players FOR SELECT USING (true);
 
--- Admin write access (simplified for this plan, assuming service role or specific admin users)
--- In a real scenario, use authenticated role with specific UID
+-- Admin write access
 CREATE POLICY "Admin Write Access Teams" ON teams FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Admin Write Access Matches" ON matches FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admin Write Access Players" ON players FOR ALL USING (auth.role() = 'authenticated');
 
 -- Seed data
 INSERT INTO teams (name) VALUES 
@@ -65,4 +76,14 @@ BEGIN
   (pn_id, sb_id, '2026-06-29 21:00:00+00'),
   (rb_id, fb_id, '2026-07-06 21:00:00+00'),
   (sf_id, pn_id, '2026-07-13 21:00:00+00');
+
+  -- Seed Players
+  INSERT INTO players (name, team_id, goals) VALUES
+  ('Gasperin', rb_id, 12),
+  ('M. Rojas', rb_id, 8),
+  ('N. Castillo', sf_id, 10),
+  ('F. Diaz', sf_id, 7),
+  ('A. Guerrero', sb_id, 9),
+  ('J. Morales', fb_id, 6),
+  ('D. Lopez', pn_id, 5);
 END $$;
