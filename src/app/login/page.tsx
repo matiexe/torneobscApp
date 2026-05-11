@@ -26,7 +26,12 @@ export default function LoginPage() {
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes('Email not confirmed')) {
+          throw new Error('El correo electrónico no ha sido verificado en Supabase. Por favor, ve al Dashboard de Supabase y marca al usuario como "Confirmed".');
+        }
+        throw error;
+      }
       router.push('/admin');
       router.refresh();
     } catch (err: any) {
