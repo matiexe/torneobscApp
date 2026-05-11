@@ -15,8 +15,8 @@ export function StandingsTable({ standings }: StandingsTableProps) {
   };
 
   return (
-    <div className="glass-panel rounded-xl overflow-hidden border-[#e9c176]/20">
-      <Table>
+    <div className="glass-panel rounded-xl overflow-x-auto border-[#e9c176]/20 no-scrollbar">
+      <Table className="min-w-[700px] lg:min-w-full">
         <TableHeader className="bg-[#e9c176]/10">
           <TableRow className="border-[#e9c176]/10 hover:bg-transparent">
             <TableHead className="w-12 text-center font-bold text-[#e9c176]">POS</TableHead>

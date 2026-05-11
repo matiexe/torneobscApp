@@ -256,7 +256,7 @@ export default function Home() {
                </div>
                <div className="relative z-10">
                  <p className="font-lexend text-[10px] font-bold text-[#e9c176] uppercase tracking-[0.3em] mb-1">Campeonato Oficial</p>
-                 <h2 className="font-anybody text-4xl md:text-5xl font-black text-[#e9c176] italic">TEMPORADA 2026</h2>
+                 <h2 className="font-anybody text-2xl md:text-5xl font-black text-[#e9c176] italic">TEMPORADA 2026</h2>
                  <div className="h-1 w-32 bg-[#e9c176] mt-2 shadow-[0_0_10px_#e9c176]"></div>
                </div>
              </div>
