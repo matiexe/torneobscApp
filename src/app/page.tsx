@@ -1,65 +1,438 @@
-import Image from "next/image";
+'use client';
+
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { calculateStandings, StandingEntry, Match, Team } from '@/lib/standings';
+import { Badge } from '@/components/ui/badge';
+import { Trophy, Calendar, ListOrdered, Users, Shield, Bell, MapPin, Swords, Castle, Church, Rocket, Info } from 'lucide-react';
+
+interface Player {
+  id: string;
+  name: string;
+  goals: number;
+  team: { name: string };
+}
 
 export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [standings, setStandings] = useState<StandingEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'home' | 'standings' | 'fixture' | 'scorers'>('home');
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const { data: teamsData } = await supabase.from('teams').select('*');
+        const { data: matchesData } = await supabase
+          .from('matches')
+          .select('*, home_team:teams!home_team_id(*), away_team:teams!away_team_id(*)')
+          .order('match_date', { ascending: true });
+        
+        const { data: playersData } = await supabase
+          .from('players')
+          .select('*, team:teams(name)')
+          .order('goals', { ascending: false });
+
+        if (teamsData && matchesData) {
+          setTeams(teamsData);
+          setMatches(matchesData);
+          setStandings(calculateStandings(teamsData, matchesData));
+        }
+        if (playersData) setPlayers(playersData as any);
+      } catch (error) {
+        console.error("Fetch error:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  const nextMatch = matches.find(m => m.status === 'pending');
+  const recentResults = matches.filter(m => m.status === 'finished').slice(-2).reverse();
+  const upcomingMatches = matches.filter(m => m.status === 'pending').slice(1, 5);
+
+  const getTeamLogo = (teamName: string | undefined) => {
+    if (!teamName) return null;
+    const slug = teamName.toLowerCase()
+      .replace(/\s+/g, '_')
+      .replace(/ñ/g, 'n');
+    return `/logos/${slug}.png`;
+  };
+
+  if (loading) return (
+    <div className="flex flex-col justify-center items-center h-screen bg-[#111415] text-[#e9c176]">
+      <div className="w-12 h-12 border-2 border-[#e9c176]/20 border-t-[#e9c176] rounded-full animate-spin mb-4"></div>
+      <p className="text-[10px] font-black uppercase tracking-[0.4em]">Súper Liga BSC</p>
     </div>
+  );
+
+  return (
+    <main className="min-h-screen bg-[#111415] text-[#e1e3e4] font-inter overflow-x-hidden stadium-bg">
+      {/* TopAppBar */}
+      <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-4 h-16 bg-[#111415]/80 backdrop-blur-xl border-b border-[#e9c176]/30 shadow-2xl">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-[#604403]/30 flex items-center justify-center border border-[#e9c176]/40 overflow-hidden p-1">
+            <img 
+              alt="BSC Logo" 
+              className="w-full h-full object-contain" 
+              src="/logos/league_logo.png" 
+            />
+          </div>
+          <h1 className="font-anybody text-xl font-bold tracking-wider uppercase text-[#e9c176]">SÚPER LIGA BSC</h1>
+        </div>
+        <button className="w-10 h-10 flex items-center justify-center text-[#e9c176] active:scale-95 duration-200">
+          <Bell className="w-5 h-5" />
+        </button>
+      </header>
+
+      <div className="pt-24 pb-32 px-4 max-w-6xl mx-auto">
+        {activeTab === 'home' && (
+          <div className="animate-in fade-in duration-700">
+            {/* Hero Section: Featured Next Match */}
+            <section className="mb-12">
+              <div className="relative overflow-hidden rounded-xl border border-[#e9c176]/30 bg-[#0a192f] shadow-2xl p-6 md:p-10">
+                <div className="absolute inset-0 opacity-20 pointer-events-none">
+                  <img alt="Estadio" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD90YWGTIuE4pXrMvpgTC5Ec916IlJgzD__bgevi2Livcu29Y18xN8x0QkITBNHs8EB9HcsZ3_RJ19HQRR8TvS3ISdpvn2oGoMVfriILRHO4Bpl8cOV1RaBMtK9wlsze1bfyr1dJYxe5yHkOavF79WDJ7ouuqJMwoW7F7VokqSbc5GHGDcvZ9bl42IfpWhMG7A_qdf46OPWWhXMoDAipoBBZv2er_Okpzjjmuc64QON9iJL3DVdqRbuDfyflVDOgfwY8nvIpcoPxN4" />
+                </div>
+                <div className="relative z-10 flex flex-col items-center">
+                  <div className="flex items-center gap-2 mb-6 px-4 py-1 rounded-full bg-[#e9c176]/10 border border-[#e9c176]/20">
+                    <span className="w-2 h-2 rounded-full bg-[#e9c176] animate-pulse"></span>
+                    <span className="font-lexend text-[10px] font-bold text-[#e9c176] uppercase tracking-widest">Próximo Partido</span>
+                  </div>
+                  
+                  {nextMatch ? (
+                    <div className="w-full grid grid-cols-1 md:grid-cols-3 items-center gap-8 mb-4">
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="w-24 h-24 md:w-32 md:h-32 rounded-full glass-panel flex items-center justify-center p-4 border-[#e9c176]/40 overflow-hidden">
+                          <img src={getTeamLogo(nextMatch.home_team?.name) || ''} alt={nextMatch.home_team?.name} className="w-20 h-20 object-contain scale-125" />
+                        </div>
+                        <h2 className="font-anybody text-xl font-semibold text-center uppercase">{nextMatch.home_team?.name}</h2>
+                      </div>
+                      
+                      <div className="flex flex-col items-center justify-center py-4 border-y md:border-y-0 md:border-x border-[#e9c176]/20">
+                        <span className="font-anybody text-5xl font-extrabold text-[#e9c176] gold-glow mb-2 italic">VS</span>
+                        <div className="text-center">
+                          <p className="font-anybody text-xl font-semibold text-[#e9c176]">21:00 HRS</p>
+                          <p className="text-xs text-[#c5c6cd]">{new Date(nextMatch.match_date).toLocaleDateString()} • Monumental</p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="w-24 h-24 md:w-32 md:h-32 rounded-full glass-panel flex items-center justify-center p-4 border-[#e9c176]/40 overflow-hidden">
+                          <img src={getTeamLogo(nextMatch.away_team?.name) || ''} alt={nextMatch.away_team?.name} className="w-20 h-20 object-contain scale-125" />
+                        </div>
+                        <h2 className="font-anybody text-xl font-semibold text-center uppercase">{nextMatch.away_team?.name}</h2>
+                      </div>
+                    </div>
+                  ) : <p className="py-10">No hay partidos próximos</p>}
+                </div>
+              </div>
+            </section>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Recent Results Column */}
+              <div className="lg:col-span-1 flex flex-col gap-6">
+                <div className="metallic-border-bottom pb-2 mb-2">
+                  <h3 className="font-anybody text-lg font-semibold text-[#e9c176] flex items-center gap-2">
+                    <Swords className="w-5 h-5" /> Resultados
+                  </h3>
+                </div>
+                <div className="flex flex-col gap-4">
+                  {recentResults.map(result => (
+                    <div key={result.id} className="match-card-gradient border border-[#44474d]/30 rounded-xl p-4 flex flex-col gap-3">
+                      <div className="flex justify-between items-center text-[10px] text-[#c5c6cd] font-bold uppercase border-b border-[#44474d]/20 pb-2">
+                        <span>Finalizado</span>
+                        <span className="text-[#ffb4ab]">Live Score</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex flex-col items-center flex-1 overflow-hidden">
+                          <img src={getTeamLogo(result.home_team?.name) || ''} alt="" className="w-8 h-8 object-contain mb-1" />
+                          <span className="text-[10px] font-bold uppercase truncate w-full text-center">{result.home_team?.name}</span>
+                        </div>
+                        <div className="flex items-center gap-4 px-4 py-1 bg-[#1d2021] rounded-lg border border-[#e9c176]/10">
+                          <span className="font-anybody text-xl font-bold">{result.home_score}</span>
+                          <span className="text-[#e9c176]/40">-</span>
+                          <span className="font-anybody text-xl font-bold">{result.away_score}</span>
+                        </div>
+                        <div className="flex flex-col items-center flex-1 overflow-hidden">
+                          <img src={getTeamLogo(result.away_team?.name) || ''} alt="" className="w-8 h-8 object-contain mb-1" />
+                          <span className="text-[10px] font-bold uppercase truncate w-full text-center">{result.away_team?.name}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Fixture Column */}
+              <div className="lg:col-span-2">
+                <div className="metallic-border-bottom pb-2 mb-6">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-anybody text-lg font-semibold text-[#e9c176] flex items-center gap-2">
+                      <Calendar className="w-5 h-5" /> Próximas Jornadas
+                    </h3>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-3">
+                  {upcomingMatches.map(match => (
+                    <div key={match.id} className="flex items-center justify-between glass-panel rounded-lg p-3 md:px-6 hover:bg-[#e9c176]/5 transition-colors border-[#e9c176]/10">
+                      <div className="w-24 flex flex-col">
+                        <span className="font-lexend text-[11px] font-bold">{new Date(match.match_date).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex-1 flex items-center justify-center gap-4">
+                        <div className="flex items-center gap-2 flex-1 justify-end">
+                          <span className="text-[10px] font-bold uppercase truncate text-right">{match.home_team?.name}</span>
+                          <img src={getTeamLogo(match.home_team?.name) || ''} alt="" className="w-5 h-5 object-contain" />
+                        </div>
+                        <div className="px-3 py-1 bg-[#0a192f] rounded border border-[#e9c176]/20 font-anybody text-[#e9c176] text-xs font-bold">VS</div>
+                        <div className="flex items-center gap-2 flex-1 justify-start">
+                          <img src={getTeamLogo(match.away_team?.name) || ''} alt="" className="w-5 h-5 object-contain" />
+                          <span className="text-[10px] font-bold uppercase truncate text-left">{match.away_team?.name}</span>
+                        </div>
+                      </div>
+                      <div className="w-20 text-right">
+                        <span className="font-lexend text-[10px] font-bold text-[#e9c176]">21:00 HRS</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'standings' && (
+          <div className="animate-in slide-in-from-right duration-500">
+             <section className="mb-10 text-center md:text-left">
+               <div className="inline-block px-4 py-1 rounded-full bg-[#e9c176]/10 border border-[#e9c176]/20 mb-4">
+                 <span className="font-lexend text-[10px] font-bold text-[#e9c176] uppercase tracking-widest">Temporada 2026</span>
+               </div>
+               <h2 className="font-anybody text-4xl font-extrabold text-white mb-2 uppercase italic tracking-tighter">TABLA DE POSICIONES</h2>
+               <p className="text-[#c5c6cd] font-inter text-lg max-w-2xl">El camino a la gloria eterna. Sigue el desempeño de los mejores equipos de la región en la máxima competición.</p>
+             </section>
+
+             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Main Table */}
+                <div className="lg:col-span-8 glass-panel rounded-xl overflow-hidden">
+                  <div className="metallic-border-bottom p-6 bg-gradient-to-r from-[#282a2b]/50 to-transparent">
+                    <h3 className="font-anybody text-[#e9c176] flex items-center gap-2 font-bold uppercase tracking-wider">
+                      <ListOrdered className="w-5 h-5" /> Clasificación General
+                    </h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-[#323536]/50 text-[#c5c6cd] uppercase text-[10px] font-bold">
+                          <th className="px-6 py-4">Pos</th>
+                          <th className="px-6 py-4">Equipo</th>
+                          <th className="px-6 py-4 text-center">PJ</th>
+                          <th className="px-6 py-4 text-center">G</th>
+                          <th className="px-6 py-4 text-center">E</th>
+                          <th className="px-6 py-4 text-center">P</th>
+                          <th className="px-6 py-4 text-center bg-[#e9c176]/10 text-[#e9c176]">PTS</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#44474d]/20 text-sm">
+                        {standings.map((entry, index) => (
+                          <tr key={entry.teamId} className="group hover:bg-[#e9c176]/5 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className={`w-8 h-8 rounded bg-[#323536] flex items-center justify-center font-bold text-xs ${index === 0 ? 'bg-[#e9c176] text-[#412d00] shadow-[0_0_15px_rgba(233,193,118,0.3)]' : ''}`}>
+                                {index + 1}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center overflow-hidden border border-[#44474d]/30">
+                                  <img src={getTeamLogo(entry.teamName) || ''} alt="" className="w-6 h-6 object-contain" />
+                                </div>
+                                <span className="font-bold uppercase tracking-tighter group-hover:text-[#e9c176] transition-colors">{entry.teamName}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-center font-mono">{entry.played}</td>
+                            <td className="px-6 py-4 text-center font-mono">{entry.won}</td>
+                            <td className="px-6 py-4 text-center font-mono">{entry.drawn}</td>
+                            <td className="px-6 py-4 text-center font-mono">{entry.lost}</td>
+                            <td className="px-6 py-4 text-center font-anybody text-lg font-black text-[#e9c176] bg-[#e9c176]/5">{entry.pts}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="p-4 bg-[#0c0f10]/50 flex items-center gap-4 border-t border-[#44474d]/20">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-[#e9c176] shadow-[0_0_5px_#e9c176]"></div>
+                      <span className="text-[10px] text-[#c5c6cd] uppercase font-bold">Zona Libertadores</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-[#ffb4ab]"></div>
+                      <span className="text-[10px] text-[#c5c6cd] uppercase font-bold">Zona Descenso</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sidebar */}
+                <div className="lg:col-span-4 flex flex-col gap-6">
+                  {/* Leading Scorer Card */}
+                  <div className="glass-panel rounded-xl overflow-hidden p-6 relative group">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                      <Trophy className="w-20 h-20 text-[#e9c176]" />
+                    </div>
+                    <h4 className="font-lexend font-bold text-[#e9c176] uppercase tracking-widest text-[10px] mb-4">Goleador del Torneo</h4>
+                    {players.length > 0 ? (
+                      <div className="flex items-center gap-4 relative z-10">
+                        <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[#e9c176]/40 to-transparent p-[1px]">
+                          <div className="w-full h-full bg-[#1d2021] rounded-xl flex items-center justify-center">
+                            <Users className="w-8 h-8 text-[#e9c176]" />
+                          </div>
+                        </div>
+                        <div>
+                          <p className="font-anybody text-xl font-bold text-white uppercase italic">{players[0].name}</p>
+                          <p className="text-[#e9c176] font-lexend text-[10px] uppercase font-bold">{players[0].team?.name}</p>
+                        </div>
+                        <div className="ml-auto text-right">
+                          <span className="block font-anybody text-3xl font-black text-[#e9c176] italic">{players[0].goals}</span>
+                          <span className="text-[10px] font-bold text-[#c5c6cd] uppercase">Goles</span>
+                        </div>
+                      </div>
+                    ) : <p className="text-xs text-[#c5c6cd]">Cargando goleador...</p>}
+                  </div>
+
+                  {/* Form Analysis */}
+                  <div className="glass-panel rounded-xl p-6">
+                    <h4 className="font-lexend font-bold text-white uppercase tracking-widest text-[10px] mb-4">Estado de Forma</h4>
+                    <div className="space-y-4">
+                      {standings.slice(0, 3).map(entry => (
+                        <div key={entry.teamId} className="flex items-center justify-between">
+                          <span className="text-xs font-bold uppercase truncate max-w-[100px]">{entry.teamName}</span>
+                          <div className="flex gap-1">
+                            <div className="w-5 h-5 rounded bg-green-500/50 flex items-center justify-center text-[8px] font-bold">W</div>
+                            <div className="w-5 h-5 rounded bg-green-500/50 flex items-center justify-center text-[8px] font-bold">W</div>
+                            <div className="w-5 h-5 rounded bg-green-500/50 flex items-center justify-center text-[8px] font-bold">W</div>
+                            <div className="w-5 h-5 rounded bg-yellow-500/50 flex items-center justify-center text-[8px] font-bold">D</div>
+                            <div className="w-5 h-5 rounded bg-green-500/50 flex items-center justify-center text-[8px] font-bold">W</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+             </div>
+          </div>
+        )}
+
+        {activeTab === 'scorers' && (
+          <div className="animate-in slide-in-from-bottom duration-500 max-w-4xl mx-auto">
+             <div className="mb-8 relative overflow-hidden rounded-xl metallic-border p-8 text-center bg-[#191c1d] border-b-2 border-[#e9c176]">
+               <h2 className="font-anybody text-4xl font-black gold-gradient-text uppercase mb-2">Máximos Artilleros</h2>
+               <p className="font-anybody text-[#c5c6cd] tracking-[0.2em] uppercase text-xs">Temporada 2026</p>
+             </div>
+             
+             <div className="grid gap-4">
+                {players.map((p, i) => (
+                  <div key={p.id} className="glass-panel p-6 rounded-xl flex items-center justify-between border-l-4 border-l-[#e9c176] group hover:bg-[#e9c176]/5 transition-all">
+                    <div className="flex items-center gap-6">
+                      <span className="text-4xl font-anybody font-black italic text-[#e9c176]/20 group-hover:text-[#e9c176]/40 transition-colors">{(i + 1).toString().padStart(2, '0')}</span>
+                      <div>
+                        <p className="font-anybody text-xl font-bold text-white uppercase italic group-hover:text-[#e9c176] transition-colors">{p.name}</p>
+                        <p className="text-[10px] font-bold text-[#c5c6cd] uppercase tracking-widest">{p.team?.name}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-4xl font-anybody font-black text-[#e9c176] italic gold-glow">{p.goals}</span>
+                      <p className="text-[9px] font-bold text-[#e9c176]/50 uppercase tracking-tighter">Goles Anotados</p>
+                    </div>
+                  </div>
+                ))}
+             </div>
+          </div>
+        )}
+
+        {activeTab === 'fixture' && (
+          <div className="animate-in fade-in duration-500">
+             {/* Seasonal Header */}
+             <div className="relative w-full mb-8 overflow-hidden rounded-xl h-48 md:h-64 flex flex-col justify-end p-6 glass-panel border-none shadow-2xl">
+               <div className="absolute inset-0 z-0">
+                 <img 
+                   className="w-full h-full object-cover opacity-40" 
+                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSGw7VbcTP-z4WCTtBt4-zpG-YMF_yMOguhmsu-a-kXhKrU9KFwT893vl80fAokeu0OPgt8xhHIWSG8NCFp10InUrxsM4vQFSpxm20zZXYhiOkq6hFezdBsdP6uNl-UsVUIdbwMMLNVEC9uGGl2DyAKVZxogqlr5kC97E5NJiGNPGk70tNmK6YCzBFXV03rVgv5uxmRnOwXSoYNHTmK5TobR0560ptc7HI84rrnbbUY97J7kaAgaKb5DX-PpWVlhpt48loiL6ores" 
+                   alt="Stadium" 
+                 />
+                 <div className="absolute inset-0 bg-gradient-to-t from-[#111415] via-transparent to-transparent"></div>
+               </div>
+               <div className="relative z-10">
+                 <p className="font-lexend text-[10px] font-bold text-[#e9c176] uppercase tracking-[0.3em] mb-1">Campeonato Oficial</p>
+                 <h2 className="font-anybody text-4xl md:text-5xl font-black text-[#e9c176] italic">TEMPORADA 2026</h2>
+                 <div className="h-1 w-32 bg-[#e9c176] mt-2 shadow-[0_0_10px_#e9c176]"></div>
+               </div>
+             </div>
+
+             <div className="flex items-center justify-between metallic-border-bottom pb-2 mb-6">
+               <h3 className="font-anybody text-xl font-bold text-[#e9c176] uppercase tracking-wider">Calendario de Partidos</h3>
+               <span className="font-lexend text-[10px] text-[#c5c6cd] uppercase font-bold">Próximos Encuentros</span>
+             </div>
+
+             <div className="grid gap-4">
+                {matches.map(match => (
+                  <div key={match.id} className="match-row-gradient glass-panel rounded-xl p-4 md:px-8 border-l-4 border-l-[#e9c176] flex flex-col md:flex-row items-center justify-between gap-4 group hover:border-[#e9c176] transition-all duration-300">
+                    <div className="flex flex-col items-center md:items-start w-32">
+                      <span className="font-lexend text-[11px] font-bold text-[#e9c176]">{new Date(match.match_date).toLocaleDateString()}</span>
+                      <span className="font-lexend text-[9px] text-[#c5c6cd] uppercase">{new Date(match.match_date).toLocaleDateString('es-ES', { weekday: 'long' })}</span>
+                    </div>
+                    
+                    <div className="flex-1 flex items-center justify-center gap-4 md:gap-12 w-full">
+                       <div className="flex flex-col md:flex-row items-center gap-3 text-center md:text-right flex-1 justify-end overflow-hidden">
+                          <span className="font-anybody text-lg font-bold text-white group-hover:text-[#e9c176] transition-colors uppercase truncate">{match.home_team?.name}</span>
+                          <div className="w-10 h-10 rounded-lg border border-[#44474d]/30 bg-white/5 p-1 flex items-center justify-center shrink-0 overflow-hidden">
+                            <img src={getTeamLogo(match.home_team?.name) || ''} alt="" className="w-8 h-8 object-contain" />
+                          </div>
+                       </div>
+
+                       <div className="bg-[#e9c176]/10 border border-[#e9c176]/30 px-4 py-1 rounded text-[#e9c176] font-anybody font-black italic text-lg">
+                        {match.status === 'finished' ? `${match.home_score} - ${match.away_score}` : 'VS'}
+                       </div>
+
+                       <div className="flex flex-col md:flex-row-reverse items-center gap-3 text-center md:text-left flex-1 justify-start overflow-hidden">
+                          <span className="font-anybody text-lg font-bold text-white group-hover:text-[#e9c176] transition-colors uppercase truncate">{match.away_team?.name}</span>
+                          <div className="w-10 h-10 rounded-lg border border-[#44474d]/30 bg-white/5 p-1 flex items-center justify-center shrink-0 overflow-hidden">
+                            <img src={getTeamLogo(match.away_team?.name) || ''} alt="" className="w-8 h-8 object-contain" />
+                          </div>
+                       </div>
+                    </div>
+
+                    <div className="flex flex-col items-center md:items-end w-32">
+                       <span className="font-anybody text-2xl font-black text-[#e9c176] italic">{match.status === 'finished' ? 'FINAL' : '21:00'}</span>
+                       <span className="font-lexend text-[9px] text-[#c5c6cd] uppercase font-bold tracking-widest">{match.status === 'finished' ? 'RESULTADO' : 'E CHANNELS'}</span>
+                    </div>
+                  </div>
+                ))}
+             </div>
+          </div>
+        )}
+      </div>
+
+      {/* BottomNavBar */}
+      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-3 bg-[#1d2021]/90 backdrop-blur-xl rounded-t-xl border-t border-[#e9c176]/20 shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
+        {[
+          { id: 'home', label: 'Inicio', icon: Trophy },
+          { id: 'standings', label: 'Tabla', icon: ListOrdered },
+          { id: 'scorers', label: 'Goles', icon: Users },
+          { id: 'fixture', label: 'Fixture', icon: Calendar },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`flex flex-col items-center justify-center px-4 py-1 rounded-xl transition-all duration-300 active:scale-90 ${
+              activeTab === tab.id ? 'text-[#e9c176] bg-[#604403]/20 scale-105 shadow-inner' : 'text-[#c5c6cd] opacity-50 hover:opacity-100'
+            }`}
+          >
+            <tab.icon className="w-5 h-5 mb-1" />
+            <span className="font-lexend text-[10px] font-bold uppercase tracking-tighter">{tab.label}</span>
+          </button>
+        ))}
+      </nav>
+    </main>
   );
 }
