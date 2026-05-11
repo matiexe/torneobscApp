@@ -18,12 +18,14 @@ export function MatchScoreForm({ match, onSave }: MatchScoreFormProps) {
   const [a, setA] = useState(match.away_score?.toString() || '');
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
     try {
       await onSave(match.id, parseInt(h), parseInt(a));
       setSuccess(true);
+      setShowConfirm(false);
       setTimeout(() => setSuccess(false), 2000);
     } catch (error) {
       console.error(error);
@@ -56,7 +58,7 @@ export function MatchScoreForm({ match, onSave }: MatchScoreFormProps) {
             type="number"
             className="bg-[#0c0f10] border-[#e9c176]/20 h-12 text-center font-anybody font-black text-2xl text-white rounded-xl focus:border-[#e9c176]" 
             value={h} 
-            onChange={e => setH(e.target.value)} 
+            onChange={e => { setH(e.target.value); setShowConfirm(false); }} 
             placeholder="0"
           />
         </div>
@@ -71,23 +73,42 @@ export function MatchScoreForm({ match, onSave }: MatchScoreFormProps) {
             type="number"
             className="bg-[#0c0f10] border-[#e9c176]/20 h-12 text-center font-anybody font-black text-2xl text-white rounded-xl focus:border-[#e9c176]" 
             value={a} 
-            onChange={e => setA(e.target.value)} 
+            onChange={e => { setA(e.target.value); setShowConfirm(false); }} 
             placeholder="0"
           />
         </div>
       </div>
       
-      <Button 
-        className={`w-full font-anybody font-black uppercase italic text-xs h-11 rounded-lg transition-all border ${
-          success 
-            ? 'bg-[#4ade80] text-black border-[#4ade80]' 
-            : 'bg-white/5 hover:bg-[#e9c176] hover:text-[#412d00] text-white border-[#e9c176]/20'
-        }`}
-        onClick={handleSave}
-        disabled={saving || h === '' || a === ''}
-      >
-        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : success ? <Check className="w-4 h-4" /> : 'Guardar Marcador'}
-      </Button>
+      {showConfirm ? (
+        <div className="flex gap-2 animate-in fade-in zoom-in-95 duration-200">
+          <Button 
+            className="flex-1 font-anybody font-black uppercase italic text-[10px] h-11 rounded-lg bg-[#4ade80] text-black hover:bg-[#22c55e]"
+            onClick={handleSave}
+            disabled={saving}
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar'}
+          </Button>
+          <Button 
+            className="flex-1 font-anybody font-black uppercase italic text-[10px] h-11 rounded-lg bg-white/5 text-[#c5c6cd] hover:bg-white/10"
+            onClick={() => setShowConfirm(false)}
+            disabled={saving}
+          >
+            Cancelar
+          </Button>
+        </div>
+      ) : (
+        <Button 
+          className={`w-full font-anybody font-black uppercase italic text-xs h-11 rounded-lg transition-all border ${
+            success 
+              ? 'bg-[#4ade80] text-black border-[#4ade80]' 
+              : 'bg-white/5 hover:bg-[#e9c176] hover:text-[#412d00] text-white border-[#e9c176]/20'
+          }`}
+          onClick={() => setShowConfirm(true)}
+          disabled={saving || h === '' || a === ''}
+        >
+          {success ? <Check className="w-4 h-4" /> : 'Guardar Marcador'}
+        </Button>
+      )}
     </div>
   );
 }
