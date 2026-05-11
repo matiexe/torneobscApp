@@ -1,4 +1,5 @@
 import { Trophy } from 'lucide-react';
+import { getTeamLogo } from '@/lib/utils';
 
 interface Player {
   id: string;
@@ -13,14 +14,6 @@ interface ScorersListProps {
 }
 
 export function ScorersList({ players, variant = 'full' }: ScorersListProps) {
-  const getTeamLogo = (teamName: string | undefined) => {
-    if (!teamName) return null;
-    const slug = teamName.toLowerCase()
-      .replace(/\s+/g, '_')
-      .replace(/ñ/g, 'n');
-    return `/logos/${slug}.png`;
-  };
-
   if (variant === 'compact') {
     return (
       <div className="flex flex-col divide-y divide-[#e9c176]/10">

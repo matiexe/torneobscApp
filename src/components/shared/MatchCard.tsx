@@ -1,5 +1,6 @@
 import { Match } from '@/lib/standings';
 import { Swords } from 'lucide-react';
+import { getTeamLogo } from '@/lib/utils';
 
 interface MatchCardProps {
   match: Match;
@@ -7,14 +8,6 @@ interface MatchCardProps {
 }
 
 export function MatchCard({ match, type }: MatchCardProps) {
-  const getTeamLogo = (teamName: string | undefined) => {
-    if (!teamName) return null;
-    const slug = teamName.toLowerCase()
-      .replace(/\s+/g, '_')
-      .replace(/ñ/g, 'n');
-    return `/logos/${slug}.png`;
-  };
-
   if (type === 'result') {
     return (
       <div className="match-card-gradient border border-[#44474d]/30 rounded-xl p-4 flex flex-col gap-3">

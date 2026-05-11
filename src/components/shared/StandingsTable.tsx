@@ -1,19 +1,12 @@
 import { StandingEntry } from '@/lib/standings';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { getTeamLogo } from '@/lib/utils';
 
 interface StandingsTableProps {
   standings: StandingEntry[];
 }
 
 export function StandingsTable({ standings }: StandingsTableProps) {
-  const getTeamLogo = (teamName: string | undefined) => {
-    if (!teamName) return null;
-    const slug = teamName.toLowerCase()
-      .replace(/\s+/g, '_')
-      .replace(/ñ/g, 'n');
-    return `/logos/${slug}.png`;
-  };
-
   return (
     <div className="glass-panel rounded-xl overflow-x-auto border-[#e9c176]/20 no-scrollbar">
       <Table className="min-w-[700px] lg:min-w-full">

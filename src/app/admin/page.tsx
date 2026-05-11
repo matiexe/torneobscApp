@@ -5,7 +5,41 @@ import { supabase } from '@/lib/supabase';
 import { Match, Team } from '@/lib/standings';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Shield, Settings, Trophy, Image as ImageIcon, Users, Plus, LogOut, LayoutDashboard, Flag, Share2 } from 'lucide-react';
+import { Shield, Settings, Trophy, Image as ImageIcon, Users, Plus, LogOut, LayoutDashboard, Flag, Share2, Trash2 } from 'lucide-react';
+
+// ... (fetchData and other functions)
+
+  async function deletePlayer(playerId: string) {
+    if (!confirm('¿Estás seguro de eliminar este jugador? Esta acción no se puede deshacer.')) return;
+    
+    const { error } = await supabase
+      .from('players')
+      .delete()
+      .eq('id', playerId);
+
+    if (error) {
+      console.error(error);
+      alert('Error al eliminar el jugador');
+    } else {
+      fetchData();
+    }
+  }
+
+  async function deleteTeam(teamId: string) {
+    if (!confirm('¿Estás seguro de eliminar este equipo? Se podrían ver afectados los partidos asociados.')) return;
+    
+    const { error } = await supabase
+      .from('teams')
+      .delete()
+      .eq('id', teamId);
+
+    if (error) {
+      console.error(error);
+      alert('Error al eliminar el equipo (Asegúrate de que no tenga partidos asociados)');
+    } else {
+      fetchData();
+    }
+  }
 import { MatchScoreForm } from '@/components/shared/MatchScoreForm';
 import { TeamEditForm } from '@/components/shared/TeamEditForm';
 import { PlayerAddForm } from '@/components/shared/PlayerAddForm';
@@ -289,13 +323,21 @@ export default function AdminPage() {
                       <p className="font-lexend text-[9px] font-bold text-[#c5c6cd] uppercase tracking-wider truncate">{player.team?.name}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3">
                     <input 
                       type="number" 
                       className="w-14 h-10 bg-[#0c0f10] border border-[#e9c176]/20 text-[#e9c176] text-center font-anybody font-black text-lg rounded-lg focus:outline-none focus:border-[#e9c176] transition-colors"
                       defaultValue={player.goals}
                       onBlur={(e) => updatePlayerGoals(player.id, parseInt(e.target.value))}
                     />
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="text-[#ffb4ab] hover:bg-[#ffb4ab]/10 hover:text-white h-10 w-10"
+                      onClick={() => deletePlayer(player.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               ))}

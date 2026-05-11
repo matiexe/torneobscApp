@@ -46,7 +46,7 @@ export async function GET(req: Request) {
       // Si tiene una URL completa en la DB, usarla
       if (team.logo_url && team.logo_url.startsWith('http')) return team.logo_url;
       
-      // Si no, construirla basándonos en el slug y la URL base actual
+      // Si no, construirla basándonos en el slug y la URL base actual (usando la misma lógica que lib/utils)
       const slug = team.name.toLowerCase()
         .replace(/\s+/g, '_')
         .replace(/ñ/g, 'n')
