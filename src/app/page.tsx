@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { calculateStandings, StandingEntry, Match, Team } from '@/lib/standings';
-import { Badge } from '@/components/ui/badge';
-import { Trophy, Calendar, ListOrdered, Users, Shield, Bell, MapPin, Swords, Castle, Church, Rocket, Info } from 'lucide-react';
+import { Bell, Calendar, ListOrdered, Swords, Trophy, Users } from 'lucide-react';
+import { MatchCard } from '@/components/shared/MatchCard';
+import { StandingsTable } from '@/components/shared/StandingsTable';
+import { ScorersList } from '@/components/shared/ScorersList';
 
 interface Player {
   id: string;
@@ -142,27 +144,7 @@ export default function Home() {
                 </div>
                 <div className="flex flex-col gap-4">
                   {recentResults.map(result => (
-                    <div key={result.id} className="match-card-gradient border border-[#44474d]/30 rounded-xl p-4 flex flex-col gap-3">
-                      <div className="flex justify-between items-center text-[10px] text-[#c5c6cd] font-bold uppercase border-b border-[#44474d]/20 pb-2">
-                        <span>Finalizado</span>
-                        <span className="text-[#ffb4ab]">Live Score</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex flex-col items-center flex-1 overflow-hidden">
-                          <img src={getTeamLogo(result.home_team?.name) || ''} alt="" className="w-8 h-8 object-contain mb-1" />
-                          <span className="text-[10px] font-bold uppercase truncate w-full text-center">{result.home_team?.name}</span>
-                        </div>
-                        <div className="flex items-center gap-4 px-4 py-1 bg-[#1d2021] rounded-lg border border-[#e9c176]/10">
-                          <span className="font-anybody text-xl font-bold">{result.home_score}</span>
-                          <span className="text-[#e9c176]/40">-</span>
-                          <span className="font-anybody text-xl font-bold">{result.away_score}</span>
-                        </div>
-                        <div className="flex flex-col items-center flex-1 overflow-hidden">
-                          <img src={getTeamLogo(result.away_team?.name) || ''} alt="" className="w-8 h-8 object-contain mb-1" />
-                          <span className="text-[10px] font-bold uppercase truncate w-full text-center">{result.away_team?.name}</span>
-                        </div>
-                      </div>
-                    </div>
+                    <MatchCard key={result.id} match={result} type="result" />
                   ))}
                 </div>
               </div>
@@ -178,25 +160,7 @@ export default function Home() {
                 </div>
                 <div className="flex flex-col gap-3">
                   {upcomingMatches.map(match => (
-                    <div key={match.id} className="flex items-center justify-between glass-panel rounded-lg p-3 md:px-6 hover:bg-[#e9c176]/5 transition-colors border-[#e9c176]/10">
-                      <div className="w-24 flex flex-col">
-                        <span className="font-lexend text-[11px] font-bold">{new Date(match.match_date).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex-1 flex items-center justify-center gap-4">
-                        <div className="flex items-center gap-2 flex-1 justify-end">
-                          <span className="text-[10px] font-bold uppercase truncate text-right">{match.home_team?.name}</span>
-                          <img src={getTeamLogo(match.home_team?.name) || ''} alt="" className="w-5 h-5 object-contain" />
-                        </div>
-                        <div className="px-3 py-1 bg-[#0a192f] rounded border border-[#e9c176]/20 font-anybody text-[#e9c176] text-xs font-bold">VS</div>
-                        <div className="flex items-center gap-2 flex-1 justify-start">
-                          <img src={getTeamLogo(match.away_team?.name) || ''} alt="" className="w-5 h-5 object-contain" />
-                          <span className="text-[10px] font-bold uppercase truncate text-left">{match.away_team?.name}</span>
-                        </div>
-                      </div>
-                      <div className="w-20 text-right">
-                        <span className="font-lexend text-[10px] font-bold text-[#e9c176]">21:00 HRS</span>
-                      </div>
-                    </div>
+                    <MatchCard key={match.id} match={match} type="fixture" />
                   ))}
                 </div>
               </div>
@@ -214,112 +178,7 @@ export default function Home() {
                <p className="text-[#c5c6cd] font-inter text-lg max-w-2xl">El camino a la gloria eterna. Sigue el desempeño de los mejores equipos de la región en la máxima competición.</p>
              </section>
 
-             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Main Table */}
-                <div className="lg:col-span-8 glass-panel rounded-xl overflow-hidden">
-                  <div className="metallic-border-bottom p-6 bg-gradient-to-r from-[#282a2b]/50 to-transparent">
-                    <h3 className="font-anybody text-[#e9c176] flex items-center gap-2 font-bold uppercase tracking-wider">
-                      <ListOrdered className="w-5 h-5" /> Clasificación General
-                    </h3>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-[#323536]/50 text-[#c5c6cd] uppercase text-[10px] font-bold">
-                          <th className="px-6 py-4">Pos</th>
-                          <th className="px-6 py-4">Equipo</th>
-                          <th className="px-6 py-4 text-center">PJ</th>
-                          <th className="px-6 py-4 text-center">G</th>
-                          <th className="px-6 py-4 text-center">E</th>
-                          <th className="px-6 py-4 text-center">P</th>
-                          <th className="px-6 py-4 text-center bg-[#e9c176]/10 text-[#e9c176]">PTS</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#44474d]/20 text-sm">
-                        {standings.map((entry, index) => (
-                          <tr key={entry.teamId} className="group hover:bg-[#e9c176]/5 transition-colors">
-                            <td className="px-6 py-4">
-                              <div className={`w-8 h-8 rounded bg-[#323536] flex items-center justify-center font-bold text-xs ${index === 0 ? 'bg-[#e9c176] text-[#412d00] shadow-[0_0_15px_rgba(233,193,118,0.3)]' : ''}`}>
-                                {index + 1}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center overflow-hidden border border-[#44474d]/30">
-                                  <img src={getTeamLogo(entry.teamName) || ''} alt="" className="w-6 h-6 object-contain" />
-                                </div>
-                                <span className="font-bold uppercase tracking-tighter group-hover:text-[#e9c176] transition-colors">{entry.teamName}</span>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 text-center font-mono">{entry.played}</td>
-                            <td className="px-6 py-4 text-center font-mono">{entry.won}</td>
-                            <td className="px-6 py-4 text-center font-mono">{entry.drawn}</td>
-                            <td className="px-6 py-4 text-center font-mono">{entry.lost}</td>
-                            <td className="px-6 py-4 text-center font-anybody text-lg font-black text-[#e9c176] bg-[#e9c176]/5">{entry.pts}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="p-4 bg-[#0c0f10]/50 flex items-center gap-4 border-t border-[#44474d]/20">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-[#e9c176] shadow-[0_0_5px_#e9c176]"></div>
-                      <span className="text-[10px] text-[#c5c6cd] uppercase font-bold">Zona Libertadores</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-[#ffb4ab]"></div>
-                      <span className="text-[10px] text-[#c5c6cd] uppercase font-bold">Zona Descenso</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Sidebar */}
-                <div className="lg:col-span-4 flex flex-col gap-6">
-                  {/* Leading Scorer Card */}
-                  <div className="glass-panel rounded-xl overflow-hidden p-6 relative group">
-                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
-                      <Trophy className="w-20 h-20 text-[#e9c176]" />
-                    </div>
-                    <h4 className="font-lexend font-bold text-[#e9c176] uppercase tracking-widest text-[10px] mb-4">Goleador del Torneo</h4>
-                    {players.length > 0 ? (
-                      <div className="flex items-center gap-4 relative z-10">
-                        <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[#e9c176]/40 to-transparent p-[1px]">
-                          <div className="w-full h-full bg-[#1d2021] rounded-xl flex items-center justify-center">
-                            <Users className="w-8 h-8 text-[#e9c176]" />
-                          </div>
-                        </div>
-                        <div>
-                          <p className="font-anybody text-xl font-bold text-white uppercase italic">{players[0].name}</p>
-                          <p className="text-[#e9c176] font-lexend text-[10px] uppercase font-bold">{players[0].team?.name}</p>
-                        </div>
-                        <div className="ml-auto text-right">
-                          <span className="block font-anybody text-3xl font-black text-[#e9c176] italic">{players[0].goals}</span>
-                          <span className="text-[10px] font-bold text-[#c5c6cd] uppercase">Goles</span>
-                        </div>
-                      </div>
-                    ) : <p className="text-xs text-[#c5c6cd]">Cargando goleador...</p>}
-                  </div>
-
-                  {/* Form Analysis */}
-                  <div className="glass-panel rounded-xl p-6">
-                    <h4 className="font-lexend font-bold text-white uppercase tracking-widest text-[10px] mb-4">Estado de Forma</h4>
-                    <div className="space-y-4">
-                      {standings.slice(0, 3).map(entry => (
-                        <div key={entry.teamId} className="flex items-center justify-between">
-                          <span className="text-xs font-bold uppercase truncate max-w-[100px]">{entry.teamName}</span>
-                          <div className="flex gap-1">
-                            <div className="w-5 h-5 rounded bg-green-500/50 flex items-center justify-center text-[8px] font-bold">W</div>
-                            <div className="w-5 h-5 rounded bg-green-500/50 flex items-center justify-center text-[8px] font-bold">W</div>
-                            <div className="w-5 h-5 rounded bg-green-500/50 flex items-center justify-center text-[8px] font-bold">W</div>
-                            <div className="w-5 h-5 rounded bg-yellow-500/50 flex items-center justify-center text-[8px] font-bold">D</div>
-                            <div className="w-5 h-5 rounded bg-green-500/50 flex items-center justify-center text-[8px] font-bold">W</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-             </div>
+             <StandingsTable standings={standings} />
           </div>
         )}
 
@@ -329,24 +188,7 @@ export default function Home() {
                <h2 className="font-anybody text-4xl font-black gold-gradient-text uppercase mb-2">Máximos Artilleros</h2>
                <p className="font-anybody text-[#c5c6cd] tracking-[0.2em] uppercase text-xs">Temporada 2026</p>
              </div>
-             
-             <div className="grid gap-4">
-                {players.map((p, i) => (
-                  <div key={p.id} className="glass-panel p-6 rounded-xl flex items-center justify-between border-l-4 border-l-[#e9c176] group hover:bg-[#e9c176]/5 transition-all">
-                    <div className="flex items-center gap-6">
-                      <span className="text-4xl font-anybody font-black italic text-[#e9c176]/20 group-hover:text-[#e9c176]/40 transition-colors">{(i + 1).toString().padStart(2, '0')}</span>
-                      <div>
-                        <p className="font-anybody text-xl font-bold text-white uppercase italic group-hover:text-[#e9c176] transition-colors">{p.name}</p>
-                        <p className="text-[10px] font-bold text-[#c5c6cd] uppercase tracking-widest">{p.team?.name}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-4xl font-anybody font-black text-[#e9c176] italic gold-glow">{p.goals}</span>
-                      <p className="text-[9px] font-bold text-[#e9c176]/50 uppercase tracking-tighter">Goles Anotados</p>
-                    </div>
-                  </div>
-                ))}
-             </div>
+             <ScorersList players={players} />
           </div>
         )}
 
@@ -376,37 +218,7 @@ export default function Home() {
 
              <div className="grid gap-4">
                 {matches.map(match => (
-                  <div key={match.id} className="match-row-gradient glass-panel rounded-xl p-4 md:px-8 border-l-4 border-l-[#e9c176] flex flex-col md:flex-row items-center justify-between gap-4 group hover:border-[#e9c176] transition-all duration-300">
-                    <div className="flex flex-col items-center md:items-start w-32">
-                      <span className="font-lexend text-[11px] font-bold text-[#e9c176]">{new Date(match.match_date).toLocaleDateString()}</span>
-                      <span className="font-lexend text-[9px] text-[#c5c6cd] uppercase">{new Date(match.match_date).toLocaleDateString('es-ES', { weekday: 'long' })}</span>
-                    </div>
-                    
-                    <div className="flex-1 flex items-center justify-center gap-4 md:gap-12 w-full">
-                       <div className="flex flex-col md:flex-row items-center gap-3 text-center md:text-right flex-1 justify-end overflow-hidden">
-                          <span className="font-anybody text-lg font-bold text-white group-hover:text-[#e9c176] transition-colors uppercase truncate">{match.home_team?.name}</span>
-                          <div className="w-10 h-10 rounded-lg border border-[#44474d]/30 bg-white/5 p-1 flex items-center justify-center shrink-0 overflow-hidden">
-                            <img src={getTeamLogo(match.home_team?.name) || ''} alt="" className="w-8 h-8 object-contain" />
-                          </div>
-                       </div>
-
-                       <div className="bg-[#e9c176]/10 border border-[#e9c176]/30 px-4 py-1 rounded text-[#e9c176] font-anybody font-black italic text-lg">
-                        {match.status === 'finished' ? `${match.home_score} - ${match.away_score}` : 'VS'}
-                       </div>
-
-                       <div className="flex flex-col md:flex-row-reverse items-center gap-3 text-center md:text-left flex-1 justify-start overflow-hidden">
-                          <span className="font-anybody text-lg font-bold text-white group-hover:text-[#e9c176] transition-colors uppercase truncate">{match.away_team?.name}</span>
-                          <div className="w-10 h-10 rounded-lg border border-[#44474d]/30 bg-white/5 p-1 flex items-center justify-center shrink-0 overflow-hidden">
-                            <img src={getTeamLogo(match.away_team?.name) || ''} alt="" className="w-8 h-8 object-contain" />
-                          </div>
-                       </div>
-                    </div>
-
-                    <div className="flex flex-col items-center md:items-end w-32">
-                       <span className="font-anybody text-2xl font-black text-[#e9c176] italic">{match.status === 'finished' ? 'FINAL' : '21:00'}</span>
-                       <span className="font-lexend text-[9px] text-[#c5c6cd] uppercase font-bold tracking-widest">{match.status === 'finished' ? 'RESULTADO' : 'E CHANNELS'}</span>
-                    </div>
-                  </div>
+                  <MatchCard key={match.id} match={match} type="fixture" />
                 ))}
              </div>
           </div>
