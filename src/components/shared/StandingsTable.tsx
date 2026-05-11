@@ -27,6 +27,7 @@ export function StandingsTable({ standings }: StandingsTableProps) {
             <TableHead className="text-center font-bold text-[#e9c176]">P</TableHead>
             <TableHead className="text-center font-bold text-[#e9c176]">GD</TableHead>
             <TableHead className="text-center font-bold text-[#e9c176]">PTS</TableHead>
+            <TableHead className="text-center font-bold text-[#e9c176]">FORMA</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -45,6 +46,22 @@ export function StandingsTable({ standings }: StandingsTableProps) {
               <TableCell className="text-center font-lexend text-xs text-[#f87171]">{entry.lost}</TableCell>
               <TableCell className="text-center font-lexend text-xs font-bold">{entry.gd > 0 ? `+${entry.gd}` : entry.gd}</TableCell>
               <TableCell className="text-center font-anybody font-black text-[#e9c176]">{entry.pts}</TableCell>
+              <TableCell className="text-center">
+                <div className="flex gap-1 justify-center">
+                  {entry.form.map((res, i) => (
+                    <div 
+                      key={i} 
+                      className={`w-5 h-5 rounded flex items-center justify-center text-[8px] font-bold ${
+                        res === 'W' ? 'bg-green-500/50 text-white' : 
+                        res === 'D' ? 'bg-yellow-500/50 text-white' : 
+                        'bg-red-500/50 text-white'
+                      }`}
+                    >
+                      {res}
+                    </div>
+                  ))}
+                </div>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

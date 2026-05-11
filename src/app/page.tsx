@@ -178,7 +178,57 @@ export default function Home() {
                <p className="text-[#c5c6cd] font-inter text-lg max-w-2xl">El camino a la gloria eterna. Sigue el desempeño de los mejores equipos de la región en la máxima competición.</p>
              </section>
 
-             <StandingsTable standings={standings} />
+             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div className="lg:col-span-8">
+                  <StandingsTable standings={standings} />
+                </div>
+
+                <div className="lg:col-span-4 space-y-6">
+                  {/* Leading Scorer Card */}
+                  <div className="glass-panel rounded-xl overflow-hidden p-6 relative group border-[#e9c176]/20">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                      <Trophy className="w-20 h-20 text-[#e9c176]" />
+                    </div>
+                    <h4 className="font-lexend font-bold text-[#e9c176] uppercase tracking-widest text-[10px] mb-4">Goleador del Torneo</h4>
+                    {players.length > 0 ? (
+                      <div className="flex items-center gap-4 relative z-10">
+                        <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[#e9c176]/40 to-transparent p-[1px]">
+                          <div className="w-full h-full bg-[#1d2021] rounded-xl flex items-center justify-center overflow-hidden">
+                            <img src={getTeamLogo(players[0].team?.name) || ''} alt="" className="w-10 h-10 object-contain" />
+                          </div>
+                        </div>
+                        <div>
+                          <p className="font-anybody text-xl font-bold text-white uppercase italic">{players[0].name}</p>
+                          <p className="text-[#e9c176] font-lexend text-[10px] uppercase font-bold">{players[0].team?.name}</p>
+                        </div>
+                        <div className="ml-auto text-right">
+                          <span className="block font-anybody text-3xl font-black text-[#e9c176] italic">{players[0].goals}</span>
+                          <span className="text-[10px] font-bold text-[#c5c6cd] uppercase">Goles</span>
+                        </div>
+                      </div>
+                    ) : <p className="text-xs text-[#c5c6cd]">Cargando goleador...</p>}
+                  </div>
+
+                  {/* Quick Info Box */}
+                  <div className="glass-panel rounded-xl p-6 border-[#e9c176]/10">
+                    <h4 className="font-lexend font-bold text-white uppercase tracking-widest text-[10px] mb-4">Análisis de la Liga</h4>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-[#c5c6cd]">Partidos Jugados</span>
+                        <span className="font-bold text-white">{matches.filter(m => m.status === 'finished').length}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-[#c5c6cd]">Promedio de Goles</span>
+                        <span className="font-bold text-white">
+                          {matches.filter(m => m.status === 'finished').length > 0 
+                            ? (matches.filter(m => m.status === 'finished').reduce((acc, m) => acc + (m.home_score || 0) + (m.away_score || 0), 0) / matches.filter(m => m.status === 'finished').length).toFixed(1)
+                            : '0'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+             </div>
           </div>
         )}
 

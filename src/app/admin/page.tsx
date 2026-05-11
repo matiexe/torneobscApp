@@ -5,8 +5,9 @@ import { supabase } from '@/lib/supabase';
 import { Match, Team } from '@/lib/standings';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Shield, Settings, Trophy, Image as ImageIcon, Users, Plus, LogOut, LayoutDashboard } from 'lucide-react';
+import { Shield, Settings, Trophy, Image as ImageIcon, Users, Plus, LogOut, LayoutDashboard, Flag } from 'lucide-react';
 import { MatchScoreForm } from '@/components/shared/MatchScoreForm';
+import { TeamEditForm } from '@/components/shared/TeamEditForm';
 import { useRouter } from 'next/navigation';
 
 interface Player {
@@ -22,6 +23,7 @@ export default function AdminPage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeSubTab, setActiveSubTab] = useState<'matches' | 'teams' | 'players'>('matches');
   const router = useRouter();
 
   useEffect(() => {
@@ -39,7 +41,7 @@ export default function AdminPage() {
       .select('id, name, goals, team:teams(name)')
       .order('goals', { ascending: false });
 
-    const { data: tData } = await supabase.from('teams').select('*');
+    const { data: tData } = await supabase.from('teams').select('*').order('name');
 
     if (mData) setMatches(mData);
     if (pData) setPlayers(pData as any);
@@ -122,105 +124,131 @@ export default function AdminPage() {
 
       <main className="max-w-6xl mx-auto pt-24 px-4">
         {/* Welcome Section */}
-        <section className="mb-10 relative overflow-hidden rounded-xl metallic-border p-8 text-center bg-[#191c1d]/50 backdrop-blur-md border-b-2 border-[#e9c176]">
+        <section className="mb-8 relative overflow-hidden rounded-xl metallic-border p-8 text-center bg-[#191c1d]/50 backdrop-blur-md border-b-2 border-[#e9c176]">
           <h2 className="font-anybody text-4xl font-black gold-gradient-text uppercase mb-2 italic">Panel de Control</h2>
-          <p className="font-lexend text-[10px] font-bold text-[#c5c6cd] uppercase tracking-[0.4em]">Gestión Centralizada del Torneo</p>
+          <div className="flex justify-center gap-4 mt-4">
+            <button 
+              onClick={() => setActiveSubTab('matches')}
+              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeSubTab === 'matches' ? 'bg-[#e9c176] text-black' : 'bg-white/5 text-[#c5c6cd]'}`}
+            >
+              Partidos
+            </button>
+            <button 
+              onClick={() => setActiveSubTab('teams')}
+              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeSubTab === 'teams' ? 'bg-[#e9c176] text-black' : 'bg-white/5 text-[#c5c6cd]'}`}
+            >
+              Equipos
+            </button>
+            <button 
+              onClick={() => setActiveSubTab('players')}
+              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeSubTab === 'players' ? 'bg-[#e9c176] text-black' : 'bg-white/5 text-[#c5c6cd]'}`}
+            >
+              Jugadores
+            </button>
+          </div>
         </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left: Match Management */}
-          <div className="lg:col-span-7 space-y-6">
-            <div className="flex items-center justify-between metallic-border-bottom pb-2">
-              <h3 className="font-anybody text-lg font-bold text-[#e9c176] flex items-center gap-2 uppercase tracking-wider">
-                <Trophy className="w-5 h-5" /> Gestión de Partidos
-              </h3>
-              <div className="flex gap-2">
-                <Badge variant="outline" className="border-[#e9c176]/30 text-[#e9c176] text-[9px] uppercase">
-                  {matches.filter(m => m.status === 'pending').length} Pendientes
-                </Badge>
-                <Badge variant="outline" className="border-[#4ade80]/30 text-[#4ade80] text-[9px] uppercase">
-                  {matches.filter(m => m.status === 'finished').length} Finalizados
-                </Badge>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {matches.filter(m => m.status === 'pending').map(match => (
-                <MatchScoreForm key={match.id} match={match} onSave={updateScore} />
-              ))}
-            </div>
-
-            {matches.filter(m => m.status === 'finished').length > 0 && (
-              <>
-                <h4 className="font-anybody text-sm font-bold text-[#c5c6cd] uppercase tracking-widest pt-4">Resultados Recientes</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {matches.filter(m => m.status === 'finished').slice(-4).map(match => (
-                    <MatchScoreForm key={match.id} match={match} onSave={updateScore} />
-                  ))}
+        {activeSubTab === 'matches' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in duration-500">
+            <div className="lg:col-span-8 space-y-6">
+              <div className="flex items-center justify-between metallic-border-bottom pb-2">
+                <h3 className="font-anybody text-lg font-bold text-[#e9c176] flex items-center gap-2 uppercase tracking-wider">
+                  <Trophy className="w-5 h-5" /> Gestión de Partidos
+                </h3>
+                <div className="flex gap-2">
+                  <Badge variant="outline" className="border-[#e9c176]/30 text-[#e9c176] text-[9px] uppercase">
+                    {matches.filter(m => m.status === 'pending').length} Pendientes
+                  </Badge>
                 </div>
-              </>
-            )}
-          </div>
-
-          {/* Right: Players & Tools */}
-          <div className="lg:col-span-5 space-y-8">
-            {/* Quick Tools */}
-            <section className="space-y-4">
-              <div className="metallic-border-bottom pb-2">
-                <h3 className="font-anybody text-lg font-bold text-[#e9c176] flex items-center gap-2 uppercase tracking-wider">
-                  <Settings className="w-5 h-5" /> Herramientas Rápidas
-                </h3>
               </div>
-              <div className="grid grid-cols-1 gap-3">
-                <Button 
-                  className="bg-white/5 hover:bg-[#e9c176] hover:text-black border border-[#e9c176]/20 h-14 justify-start px-6 gap-4"
-                  onClick={() => window.open('/api/og', '_blank')}
-                >
-                  <ImageIcon className="w-5 h-5" />
-                  <div className="text-left">
-                    <p className="font-anybody font-black uppercase italic text-sm tracking-tighter">Generar Banner Social</p>
-                    <p className="text-[9px] font-bold uppercase opacity-60">Crea imagen para redes</p>
-                  </div>
-                </Button>
-              </div>
-            </section>
-
-            {/* Players Table */}
-            <section className="space-y-4">
-              <div className="metallic-border-bottom pb-2 flex justify-between items-center">
-                <h3 className="font-anybody text-lg font-bold text-[#e9c176] flex items-center gap-2 uppercase tracking-wider">
-                  <Users className="w-5 h-5" /> Tabla de Goleadores
-                </h3>
-                <button className="p-2 bg-[#e9c176]/10 rounded-lg text-[#e9c176] hover:bg-[#e9c176]/20 transition-all">
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="glass-panel rounded-xl overflow-hidden divide-y divide-[#44474d]/20">
-                {players.map(player => (
-                  <div key={player.id} className="flex items-center justify-between gap-4 p-4 hover:bg-[#e9c176]/5 transition-colors">
-                    <div className="flex items-center gap-3 flex-1 overflow-hidden">
-                      <div className="w-10 h-10 rounded-lg border border-[#44474d]/30 bg-white/5 p-1 flex items-center justify-center overflow-hidden shrink-0">
-                        <img src={getTeamLogo(player.team?.name) || ''} alt="" className="w-full h-full object-contain" />
-                      </div>
-                      <div className="overflow-hidden">
-                        <p className="font-anybody font-bold text-white uppercase italic text-sm truncate">{player.name}</p>
-                        <p className="font-lexend text-[9px] font-bold text-[#c5c6cd] uppercase tracking-wider truncate">{player.team?.name}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <input 
-                        type="number" 
-                        className="w-14 h-10 bg-[#0c0f10] border border-[#e9c176]/20 text-[#e9c176] text-center font-anybody font-black text-lg rounded-lg focus:outline-none focus:border-[#e9c176] transition-colors"
-                        defaultValue={player.goals}
-                        onBlur={(e) => updatePlayerGoals(player.id, parseInt(e.target.value))}
-                      />
-                    </div>
-                  </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {matches.filter(m => m.status === 'pending').map(match => (
+                  <MatchScoreForm key={match.id} match={match} onSave={updateScore} />
                 ))}
               </div>
-            </section>
+
+              {matches.filter(m => m.status === 'finished').length > 0 && (
+                <>
+                  <h4 className="font-anybody text-sm font-bold text-[#c5c6cd] uppercase tracking-widest pt-4">Resultados Recientes</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {matches.filter(m => m.status === 'finished').slice(-4).map(match => (
+                      <MatchScoreForm key={match.id} match={match} onSave={updateScore} />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="lg:col-span-4 space-y-6">
+               <section className="glass-panel p-6 rounded-xl border border-[#e9c176]/10">
+                  <h3 className="font-anybody text-[#e9c176] font-bold uppercase text-xs mb-4 flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4" /> Banners Sociales
+                  </h3>
+                  <Button 
+                    className="w-full bg-white/5 hover:bg-[#e9c176] hover:text-black border border-[#e9c176]/20 h-12 text-[10px] font-black uppercase italic"
+                    onClick={() => window.open('/api/og', '_blank')}
+                  >
+                    Generar Banner Próximo Partido
+                  </Button>
+               </section>
+            </div>
           </div>
-        </div>
+        )}
+
+        {activeSubTab === 'teams' && (
+          <div className="animate-in fade-in duration-500">
+            <div className="flex items-center justify-between metallic-border-bottom pb-4 mb-6">
+              <h3 className="font-anybody text-lg font-bold text-[#e9c176] flex items-center gap-2 uppercase tracking-wider">
+                <Flag className="w-5 h-5" /> Gestión de Equipos
+              </h3>
+              <Button className="bg-[#e9c176]/10 text-[#e9c176] border border-[#e9c176]/20 hover:bg-[#e9c176] hover:text-black text-[10px] font-black uppercase">
+                <Plus className="w-4 h-4 mr-2" /> Nuevo Equipo
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {teams.map(team => (
+                <TeamEditForm key={team.id} team={team} onSave={fetchData} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeSubTab === 'players' && (
+          <div className="max-w-4xl mx-auto animate-in fade-in duration-500">
+            <div className="flex items-center justify-between metallic-border-bottom pb-4 mb-6">
+              <h3 className="font-anybody text-lg font-bold text-[#e9c176] flex items-center gap-2 uppercase tracking-wider">
+                <Users className="w-5 h-5" /> Tabla de Goleadores
+              </h3>
+              <Button className="bg-[#e9c176]/10 text-[#e9c176] border border-[#e9c176]/20 hover:bg-[#e9c176] hover:text-black text-[10px] font-black uppercase">
+                <Plus className="w-4 h-4 mr-2" /> Nuevo Jugador
+              </Button>
+            </div>
+            <div className="glass-panel rounded-xl overflow-hidden divide-y divide-[#44474d]/20">
+              {players.map(player => (
+                <div key={player.id} className="flex items-center justify-between gap-4 p-4 hover:bg-[#e9c176]/5 transition-colors">
+                  <div className="flex items-center gap-3 flex-1 overflow-hidden">
+                    <div className="w-10 h-10 rounded-lg border border-[#44474d]/30 bg-white/5 p-1 flex items-center justify-center overflow-hidden shrink-0">
+                      <img src={player.team_id ? teams.find(t => t.id === player.team_id)?.logo_url || getTeamLogo(player.team?.name) || '' : ''} alt="" className="w-full h-full object-contain" />
+                    </div>
+                    <div className="overflow-hidden">
+                      <p className="font-anybody font-bold text-white uppercase italic text-sm truncate">{player.name}</p>
+                      <p className="font-lexend text-[9px] font-bold text-[#c5c6cd] uppercase tracking-wider truncate">{player.team?.name}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="number" 
+                      className="w-14 h-10 bg-[#0c0f10] border border-[#e9c176]/20 text-[#e9c176] text-center font-anybody font-black text-lg rounded-lg focus:outline-none focus:border-[#e9c176] transition-colors"
+                      defaultValue={player.goals}
+                      onBlur={(e) => updatePlayerGoals(player.id, parseInt(e.target.value))}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

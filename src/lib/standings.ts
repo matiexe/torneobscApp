@@ -27,6 +27,7 @@ export interface StandingEntry {
   ga: number;
   gd: number;
   pts: number;
+  form: string[]; // ['W', 'L', 'D', 'W', 'W']
 }
 
 export function calculateStandings(teams: Team[], matches: Match[]): StandingEntry[] {
@@ -44,10 +45,16 @@ export function calculateStandings(teams: Team[], matches: Match[]): StandingEnt
       ga: 0,
       gd: 0,
       pts: 0,
+      form: [],
     };
   });
 
-  matches.forEach((match) => {
+  // Sort matches by date to calculate form correctly
+  const sortedMatches = [...matches].sort((a, b) => 
+    new Date(a.match_date).getTime() - new Date(b.match_date).getTime()
+  );
+
+  sortedMatches.forEach((match) => {
     if (match.status !== 'finished' || match.home_score === null || match.away_score === null) return;
 
     const home = standingsMap[match.home_team_id];
@@ -66,15 +73,21 @@ export function calculateStandings(teams: Team[], matches: Match[]): StandingEnt
       home.won++;
       home.pts += 3;
       away.lost++;
+      home.form.push('W');
+      away.form.push('L');
     } else if (match.home_score < match.away_score) {
       away.won++;
       away.pts += 3;
       home.lost++;
+      home.form.push('L');
+      away.form.push('W');
     } else {
       home.drawn++;
       away.drawn++;
       home.pts += 1;
       away.pts += 1;
+      home.form.push('D');
+      away.form.push('D');
     }
   });
 
@@ -82,6 +95,7 @@ export function calculateStandings(teams: Team[], matches: Match[]): StandingEnt
     .map((entry) => ({
       ...entry,
       gd: entry.gf - entry.ga,
+      form: entry.form.slice(-5), // Keep last 5 matches
     }))
     .sort((a, b) => {
       if (b.pts !== a.pts) return b.pts - a.pts;
