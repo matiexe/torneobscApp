@@ -32,10 +32,13 @@ export async function GET(req: Request) {
 
     // Detectar la URL base de forma más robusta para producción
     const host = req.headers.get('host');
-    const protocol = host?.includes('localhost') ? 'http' : 'https';
     
-    // Priorizar variable de entorno si existe, sino usar el host de la request
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || `${protocol}://${host}`;
+    // Priorizar variable de entorno si existe, sino usar el host detectado (forzando https en prod)
+    let baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    if (!baseUrl) {
+      const protocol = host?.includes('localhost') ? 'http' : 'https';
+      baseUrl = `${protocol}://${host}`;
+    }
     
     const stadiumBg = "https://lh3.googleusercontent.com/aida-public/AB6AXuD90YWGTIuE4pXrMvpgTC5Ec916IlJgzD__bgevi2Livcu29Y18xN8x0QkITBNHs8EB9HcsZ3_RJ19HQRR8TvS3ISdpvn2oGoMVfriILRHO4Bpl8cOV1RaBMtK9wlsze1bfyr1dJYxe5yHkOavF79WDJ7ouuqJMwoW7F7VokqSbc5GHGDcvZ9bl42IfpWhMG7A_qdf46OPWWhXMoDAipoBBZv2er_Okpzjjmuc64QON9iJL3DVdqRbuDfyflVDOgfwY8nvIpcoPxN4";
 
