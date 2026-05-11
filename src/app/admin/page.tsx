@@ -213,27 +213,6 @@ export default function AdminPage() {
                 </>
               )}
             </div>
-
-            <div className="lg:col-span-4 space-y-6">
-               <section className="glass-panel p-6 rounded-xl border border-[#e9c176]/10">
-                  <h3 className="font-anybody text-[#e9c176] font-bold uppercase text-xs mb-4 flex items-center gap-2">
-                    <ImageIcon className="w-4 h-4" /> Banners Sociales
-                  </h3>
-                  <Button 
-                    className="w-full bg-white/5 hover:bg-[#e9c176] hover:text-black border border-[#e9c176]/20 h-12 text-[10px] font-black uppercase italic"
-                    onClick={() => {
-                      const nextMatch = matches.find(m => m.status === 'pending');
-                      if (nextMatch) {
-                        window.open(`/api/og?matchId=${nextMatch.id}`, '_blank');
-                      } else {
-                        window.open('/api/og', '_blank');
-                      }
-                    }}
-                  >
-                    Generar Banner Próximo Partido
-                  </Button>
-               </section>
-            </div>
           </div>
         )}
 
