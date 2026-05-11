@@ -118,7 +118,7 @@ export default function Home() {
                         <span className="font-anybody text-5xl font-extrabold text-[#e9c176] gold-glow mb-2 italic">VS</span>
                         <div className="text-center">
                           <p className="font-anybody text-xl font-semibold text-[#e9c176]">21:00 HRS</p>
-                          <p className="text-xs text-[#c5c6cd]">{new Date(nextMatch.match_date).toLocaleDateString()} • Monumental</p>
+                          <p className="text-xs text-[#c5c6cd]">{new Date(nextMatch.match_date).toLocaleDateString()} • La Curtiembre</p>
                         </div>
                       </div>
 

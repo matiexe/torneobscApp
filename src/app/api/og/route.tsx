@@ -30,8 +30,11 @@ export async function GET(req: Request) {
       return new Response('No se encontró el partido', { status: 404 });
     }
 
-    // Usar la URL de producción para las imágenes si es posible
-    const baseUrl = 'https://torneobsc.vercel.app';
+    // Detectar la URL base dinámicamente para que funcione en local y producción
+    const host = req.headers.get('host') || 'torneobsc.vercel.app';
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    const baseUrl = `${protocol}://${host}`;
+    
     const stadiumBg = "https://lh3.googleusercontent.com/aida-public/AB6AXuD90YWGTIuE4pXrMvpgTC5Ec916IlJgzD__bgevi2Livcu29Y18xN8x0QkITBNHs8EB9HcsZ3_RJ19HQRR8TvS3ISdpvn2oGoMVfriILRHO4Bpl8cOV1RaBMtK9wlsze1bfyr1dJYxe5yHkOavF79WDJ7ouuqJMwoW7F7VokqSbc5GHGDcvZ9bl42IfpWhMG7A_qdf46OPWWhXMoDAipoBBZv2er_Okpzjjmuc64QON9iJL3DVdqRbuDfyflVDOgfwY8nvIpcoPxN4";
 
     const getTeamLogoUrl = (team: any) => {
@@ -142,7 +145,7 @@ export async function GET(req: Request) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                <span style={{ color: '#e9c176', fontSize: 36, fontWeight: '900' }}>21:00 HRS</span>
                <span style={{ color: 'white', fontSize: 30, opacity: 0.5 }}>|</span>
-               <span style={{ color: 'white', fontSize: 24, fontWeight: 'bold' }}>ESTADIO MONUMENTAL</span>
+               <span style={{ color: 'white', fontSize: 24, fontWeight: 'bold' }}>LA CURTIEMBRE</span>
             </div>
           </div>
         </div>
