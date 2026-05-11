@@ -54,18 +54,24 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const { data: { session } } = await supabase.auth.getSession();
+  // IMPORTANTE: Usar getUser() en lugar de getSession() para mayor seguridad en el middleware
+  const { data: { user } } = await supabase.auth.getUser();
 
-  // Proteción de rutas /admin
+  // Protección de rutas /admin
   if (request.nextUrl.pathname.startsWith('/admin')) {
-    if (!session) {
+    if (!user) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
+  }
+
+  // Si ya está logueado y trata de ir a login, mandarlo a admin
+  if (request.nextUrl.pathname === '/login' && user) {
+    return NextResponse.redirect(new URL('/admin', request.url));
   }
 
   return response;
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: ['/admin/:path*', '/login'],
 };
