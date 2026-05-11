@@ -42,22 +42,30 @@ export function MatchCard({ match, type }: MatchCardProps) {
   }
 
   return (
-    <div className="flex items-center justify-between glass-panel rounded-lg p-3 md:px-6 hover:bg-[#e9c176]/5 transition-colors border-[#e9c176]/10">
-      <div className="w-24 flex flex-col">
-        <span className="font-lexend text-[11px] font-bold">{new Date(match.match_date).toLocaleDateString()}</span>
+    <div className="flex flex-col sm:flex-row items-center justify-between glass-panel rounded-lg p-3 md:px-6 hover:bg-[#e9c176]/5 transition-colors border-[#e9c176]/10 gap-2 sm:gap-4">
+      {/* Mobile: Top Row with Date/Time */}
+      <div className="w-full sm:w-24 flex justify-between sm:block border-b sm:border-b-0 border-[#e9c176]/10 pb-1 sm:pb-0">
+        <span className="font-lexend text-[10px] md:text-[11px] font-bold text-[#c5c6cd] sm:text-inherit">
+          {new Date(match.match_date).toLocaleDateString()}
+        </span>
+        <span className="sm:hidden font-lexend text-[10px] font-bold text-[#e9c176]">21:00 HRS</span>
       </div>
-      <div className="flex-1 flex items-center justify-center gap-4">
-        <div className="flex items-center gap-2 flex-1 justify-end">
+
+      {/* Teams section */}
+      <div className="flex-1 w-full flex items-center justify-center gap-2 md:gap-4 overflow-hidden py-1 sm:py-0">
+        <div className="flex items-center gap-1 md:gap-2 flex-1 justify-end overflow-hidden">
           <span className="text-[10px] font-bold uppercase truncate text-right">{match.home_team?.name}</span>
-          <img src={getTeamLogo(match.home_team?.name) || ''} alt="" className="w-5 h-5 object-contain" />
+          <img src={getTeamLogo(match.home_team?.name) || ''} alt="" className="w-5 h-5 object-contain shrink-0" />
         </div>
-        <div className="px-3 py-1 bg-[#0a192f] rounded border border-[#e9c176]/20 font-anybody text-[#e9c176] text-xs font-bold">VS</div>
-        <div className="flex items-center gap-2 flex-1 justify-start">
-          <img src={getTeamLogo(match.away_team?.name) || ''} alt="" className="w-5 h-5 object-contain" />
+        <div className="px-2 md:px-3 py-1 bg-[#0a192f] rounded border border-[#e9c176]/20 font-anybody text-[#e9c176] text-[10px] md:text-xs font-bold shrink-0">VS</div>
+        <div className="flex items-center gap-1 md:gap-2 flex-1 justify-start overflow-hidden">
+          <img src={getTeamLogo(match.away_team?.name) || ''} alt="" className="w-5 h-5 object-contain shrink-0" />
           <span className="text-[10px] font-bold uppercase truncate text-left">{match.away_team?.name}</span>
         </div>
       </div>
-      <div className="w-20 text-right">
+
+      {/* Desktop only Time */}
+      <div className="hidden sm:block w-20 text-right shrink-0">
         <span className="font-lexend text-[10px] font-bold text-[#e9c176]">21:00 HRS</span>
       </div>
     </div>
