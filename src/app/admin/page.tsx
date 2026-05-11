@@ -148,9 +148,41 @@ export default function AdminPage() {
           </div>
         </section>
 
+        {/* Quick Actions (Promoted to top) */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+          <Button 
+            className="bg-gradient-to-r from-[#e9c176] to-[#ffdea5] hover:scale-[1.02] transition-transform text-[#412d00] font-anybody font-black uppercase italic tracking-tighter h-16 rounded-xl shadow-xl shadow-[#e9c176]/10 gap-3" 
+            onClick={() => {
+              const nextMatch = matches.find(m => m.status === 'pending');
+              if (nextMatch) {
+                window.open(`/api/og?matchId=${nextMatch.id}`, '_blank');
+              } else {
+                window.open('/api/og', '_blank');
+              }
+            }}
+          >
+            <ImageIcon className="w-5 h-5" />
+            Generar Historia Instagram
+          </Button>
+
+          <Button 
+            className="bg-[#25D366] hover:bg-[#20ba56] hover:scale-[1.02] transition-transform text-white font-anybody font-black uppercase italic tracking-tighter h-16 rounded-xl shadow-xl shadow-[#25D366]/10 gap-3 border-none" 
+            onClick={() => {
+              const nextMatch = matches.find(m => m.status === 'pending');
+              const text = nextMatch 
+                ? `¡No te pierdas el próximo partido de la Súper Liga BSC! 🏆\n\n⚽ *${nextMatch.home_team?.name} vs ${nextMatch.away_team?.name}*\n📅 ${new Date(nextMatch.match_date).toLocaleDateString()}\n🏟️ La Curtiembre\n\nMira todo el fixture aquí: ${window.location.origin}`
+                : `Sigue la Súper Liga BSC en vivo. Mira la tabla y el fixture aquí: ${window.location.origin}`;
+              window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+            }}
+          >
+            <Users className="w-5 h-5" />
+            Compartir en WhatsApp
+          </Button>
+        </section>
+
         {activeSubTab === 'matches' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in duration-500">
-            <div className="lg:col-span-8 space-y-6">
+            <div className="lg:col-span-12 space-y-6">
               <div className="flex items-center justify-between metallic-border-bottom pb-2">
                 <h3 className="font-anybody text-lg font-bold text-[#e9c176] flex items-center gap-2 uppercase tracking-wider">
                   <Trophy className="w-5 h-5" /> Gestión de Partidos

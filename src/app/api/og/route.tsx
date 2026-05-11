@@ -30,16 +30,23 @@ export async function GET(req: Request) {
       return new Response('No se encontró el partido', { status: 404 });
     }
 
-    // Detectar la URL base dinámicamente para que funcione en local y producción
-    const host = req.headers.get('host') || 'torneobsc.vercel.app';
-    const protocol = host.includes('localhost') ? 'http' : 'https';
+    // Detectar la URL base de forma más robusta
+    const host = req.headers.get('host');
+    const protocol = host?.includes('localhost') ? 'http' : 'https';
     const baseUrl = `${protocol}://${host}`;
     
     const stadiumBg = "https://lh3.googleusercontent.com/aida-public/AB6AXuD90YWGTIuE4pXrMvpgTC5Ec916IlJgzD__bgevi2Livcu29Y18xN8x0QkITBNHs8EB9HcsZ3_RJ19HQRR8TvS3ISdpvn2oGoMVfriILRHO4Bpl8cOV1RaBMtK9wlsze1bfyr1dJYxe5yHkOavF79WDJ7ouuqJMwoW7F7VokqSbc5GHGDcvZ9bl42IfpWhMG7A_qdf46OPWWhXMoDAipoBBZv2er_Okpzjjmuc64QON9iJL3DVdqRbuDfyflVDOgfwY8nvIpcoPxN4";
 
     const getTeamLogoUrl = (team: any) => {
+      // Si tiene una URL completa en la DB, usarla
       if (team.logo_url && team.logo_url.startsWith('http')) return team.logo_url;
-      const slug = team.name.toLowerCase().replace(/\s+/g, '_').replace(/ñ/g, 'n');
+      
+      // Si no, construirla basándonos en el slug y la URL base actual
+      const slug = team.name.toLowerCase()
+        .replace(/\s+/g, '_')
+        .replace(/ñ/g, 'n')
+        .replace(/[^a-z0-9_]/g, '');
+      
       return `${baseUrl}/logos/${slug}.png`;
     };
 
