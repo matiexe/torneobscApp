@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Shield, Settings, Trophy, Image as ImageIcon, Users, Plus, LogOut, LayoutDashboard, Flag } from 'lucide-react';
 import { MatchScoreForm } from '@/components/shared/MatchScoreForm';
 import { TeamEditForm } from '@/components/shared/TeamEditForm';
+import { PlayerAddForm } from '@/components/shared/PlayerAddForm';
 import { useRouter } from 'next/navigation';
 
 interface Player {
@@ -24,6 +25,7 @@ export default function AdminPage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSubTab, setActiveSubTab] = useState<'matches' | 'teams' | 'players'>('matches');
+  const [showPlayerAdd, setShowPlayerAdd] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -259,10 +261,24 @@ export default function AdminPage() {
               <h3 className="font-anybody text-lg font-bold text-[#e9c176] flex items-center gap-2 uppercase tracking-wider">
                 <Users className="w-5 h-5" /> Tabla de Goleadores
               </h3>
-              <Button className="bg-[#e9c176]/10 text-[#e9c176] border border-[#e9c176]/20 hover:bg-[#e9c176] hover:text-black text-[10px] font-black uppercase">
-                <Plus className="w-4 h-4 mr-2" /> Nuevo Jugador
+              <Button 
+                onClick={() => setShowPlayerAdd(!showPlayerAdd)}
+                className={`${showPlayerAdd ? 'bg-white/10 text-white' : 'bg-[#e9c176]/10 text-[#e9c176]'} border border-[#e9c176]/20 hover:bg-[#e9c176] hover:text-black text-[10px] font-black uppercase transition-all`}
+              >
+                {showPlayerAdd ? 'Cerrar' : <><Plus className="w-4 h-4 mr-2" /> Nuevo Jugador</>}
               </Button>
             </div>
+
+            {showPlayerAdd && (
+              <PlayerAddForm 
+                teams={teams} 
+                onSave={async () => {
+                  await fetchData();
+                  setShowPlayerAdd(false);
+                }} 
+              />
+            )}
+
             <div className="glass-panel rounded-xl overflow-hidden divide-y divide-[#44474d]/20">
               {players.map(player => (
                 <div key={player.id} className="flex items-center justify-between gap-4 p-4 hover:bg-[#e9c176]/5 transition-colors">
