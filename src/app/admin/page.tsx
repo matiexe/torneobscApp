@@ -27,6 +27,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [activeSubTab, setActiveSubTab] = useState<'matches' | 'teams' | 'players'>('matches');
   const [showPlayerAdd, setShowPlayerAdd] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -353,6 +354,15 @@ export default function AdminPage() {
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
                 </div>
               ))}
             </div>

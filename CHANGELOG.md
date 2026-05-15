@@ -2,6 +2,13 @@
 
 All notable changes to the **Súper Liga BSC** project will be documented in this file.
 
+## [0.2.2] - 2026-05-14
+
+### Updated
+- **Player Delete Button:** Enhanced UX for the player delete button in the admin panel by adding a loading state and distinct red styling.
+
+---
+
 ## [0.2.1] - 2026-05-14
 
 ### Added
