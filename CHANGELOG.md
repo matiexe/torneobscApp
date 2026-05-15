@@ -2,6 +2,16 @@
 
 All notable changes to the **Súper Liga BSC** project will be documented in this file.
 
+## [0.2.1] - 2026-05-14
+
+### Added
+- **Dedicated Stream Save Button:** Added a specific button to save only the transmission URL in the admin panel.
+
+### Fixed
+- **Partial Updates:** Improved the admin logic to allow updating the stream URL without affecting match scores or status.
+
+---
+
 ## [0.2.0] - 2026-05-14
 
 ### Added

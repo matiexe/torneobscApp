@@ -53,14 +53,17 @@ export default function AdminPage() {
   }
 
   async function updateScore(matchId: string, homeScore: number, awayScore: number, streamUrl?: string) {
+    const updateData: any = { stream_url: streamUrl };
+    
+    if (!isNaN(homeScore) && !isNaN(awayScore)) {
+      updateData.home_score = homeScore;
+      updateData.away_score = awayScore;
+      updateData.status = 'finished';
+    }
+
     const { error } = await supabase
       .from('matches')
-      .update({ 
-        home_score: homeScore, 
-        away_score: awayScore, 
-        status: (homeScore !== null && awayScore !== null) ? 'finished' : 'pending',
-        stream_url: streamUrl 
-      })
+      .update(updateData)
       .eq('id', matchId);
 
     if (error) throw error;

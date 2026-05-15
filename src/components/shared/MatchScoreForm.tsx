@@ -95,13 +95,32 @@ export function MatchScoreForm({ match, onSave, onDelete }: MatchScoreFormProps)
 
       <div className="mb-6">
         <p className="font-anybody text-[9px] font-bold uppercase text-[#e9c176]/60 mb-2 px-1 tracking-widest">URL Transmisión (YouTube)</p>
-        <Input 
-          type="text"
-          className="bg-[#0c0f10] border-[#e9c176]/10 h-9 text-[10px] text-white rounded-lg focus:border-[#e9c176] placeholder:text-white/10" 
-          value={stream} 
-          onChange={e => { setStream(e.target.value); setShowConfirm(false); }} 
-          placeholder="https://youtube.com/watch?v=..."
-        />
+        <div className="flex gap-2">
+          <Input 
+            type="text"
+            className="flex-1 bg-[#0c0f10] border-[#e9c176]/10 h-9 text-[10px] text-white rounded-lg focus:border-[#e9c176] placeholder:text-white/10" 
+            value={stream} 
+            onChange={e => { setStream(e.target.value); setShowConfirm(false); }} 
+            placeholder="https://youtube.com/watch?v=..."
+          />
+          <Button 
+            size="sm"
+            className="h-9 px-3 bg-[#e9c176]/10 text-[#e9c176] border border-[#e9c176]/20 hover:bg-[#e9c176] hover:text-black transition-all"
+            onClick={async () => {
+              setSaving(true);
+              try {
+                // Save only stream, keep current scores
+                await onSave(match.id, match.home_score ?? NaN, match.away_score ?? NaN, stream);
+                setSuccess(true);
+                setTimeout(() => setSuccess(false), 2000);
+              } catch (e) { console.error(e); }
+              finally { setSaving(false); }
+            }}
+            disabled={saving || stream === match.stream_url}
+          >
+            {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+          </Button>
+        </div>
       </div>
       
       {showConfirm ? (
