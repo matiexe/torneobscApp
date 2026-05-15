@@ -15,6 +15,7 @@ CREATE TABLE matches (
   home_score INTEGER,
   away_score INTEGER,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'finished')),
+  stream_url TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

@@ -10,13 +10,14 @@ import { Check, Loader2, Trash2 } from 'lucide-react';
 
 interface MatchScoreFormProps {
   match: Match;
-  onSave: (id: string, h: number, a: number) => Promise<void>;
+  onSave: (id: string, h: number, a: number, stream?: string) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
 }
 
 export function MatchScoreForm({ match, onSave, onDelete }: MatchScoreFormProps) {
   const [h, setH] = useState(match.home_score?.toString() || '');
   const [a, setA] = useState(match.away_score?.toString() || '');
+  const [stream, setStream] = useState(match.stream_url || '');
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -24,7 +25,7 @@ export function MatchScoreForm({ match, onSave, onDelete }: MatchScoreFormProps)
   const handleSave = async () => {
     setSaving(true);
     try {
-      await onSave(match.id, parseInt(h), parseInt(a));
+      await onSave(match.id, parseInt(h), parseInt(a), stream);
       setSuccess(true);
       setShowConfirm(false);
       setTimeout(() => setSuccess(false), 2000);
@@ -62,7 +63,7 @@ export function MatchScoreForm({ match, onSave, onDelete }: MatchScoreFormProps)
         </div>
       </div>
       
-      <div className="grid grid-cols-7 items-center gap-2 mb-6">
+      <div className="grid grid-cols-7 items-center gap-2 mb-4">
         <div className="col-span-3 text-center">
           <p className="font-anybody text-[10px] font-black uppercase text-[#c5c6cd] mb-3 truncate">
             {match.home_team?.name}
@@ -90,6 +91,17 @@ export function MatchScoreForm({ match, onSave, onDelete }: MatchScoreFormProps)
             placeholder="0"
           />
         </div>
+      </div>
+
+      <div className="mb-6">
+        <p className="font-anybody text-[9px] font-bold uppercase text-[#e9c176]/60 mb-2 px-1 tracking-widest">URL Transmisión (YouTube)</p>
+        <Input 
+          type="text"
+          className="bg-[#0c0f10] border-[#e9c176]/10 h-9 text-[10px] text-white rounded-lg focus:border-[#e9c176] placeholder:text-white/10" 
+          value={stream} 
+          onChange={e => { setStream(e.target.value); setShowConfirm(false); }} 
+          placeholder="https://youtube.com/watch?v=..."
+        />
       </div>
       
       {showConfirm ? (

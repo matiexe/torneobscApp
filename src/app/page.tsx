@@ -93,6 +93,33 @@ export default function Home() {
       <div className="pt-24 pb-32 px-4 max-w-6xl mx-auto">
         {activeTab === 'home' && (
           <div className="animate-in fade-in duration-700">
+            {/* Live Stream Section (Dynamic) */}
+            {nextMatch?.stream_url && (
+              <section className="mb-8">
+                <div className="glass-panel rounded-xl overflow-hidden border-[#e9c176]/30 bg-black/40 p-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
+                    </span>
+                    <h3 className="font-anybody text-sm font-bold text-white uppercase tracking-widest">Transmisión en Vivo</h3>
+                  </div>
+                  <div className="relative aspect-video rounded-lg overflow-hidden bg-[#0a192f] border border-white/10">
+                    <iframe 
+                      width="100%" 
+                      height="100%" 
+                      src={`https://www.youtube.com/embed/${nextMatch.stream_url.split('v=')[1] || nextMatch.stream_url.split('/').pop()}`}
+                      title="Live Stream" 
+                      frameBorder="0" 
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                      allowFullScreen
+                      className="absolute inset-0"
+                    ></iframe>
+                  </div>
+                </div>
+              </section>
+            )}
+
             {/* Hero Section: Featured Next Match */}
             <section className="mb-12">
               <div className="relative overflow-hidden rounded-xl border border-[#e9c176]/30 bg-[#0a192f] shadow-2xl p-6 md:p-10">

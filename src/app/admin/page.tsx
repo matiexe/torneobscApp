@@ -52,10 +52,15 @@ export default function AdminPage() {
     setLoading(false);
   }
 
-  async function updateScore(matchId: string, homeScore: number, awayScore: number) {
+  async function updateScore(matchId: string, homeScore: number, awayScore: number, streamUrl?: string) {
     const { error } = await supabase
       .from('matches')
-      .update({ home_score: homeScore, away_score: awayScore, status: 'finished' })
+      .update({ 
+        home_score: homeScore, 
+        away_score: awayScore, 
+        status: (homeScore !== null && awayScore !== null) ? 'finished' : 'pending',
+        stream_url: streamUrl 
+      })
       .eq('id', matchId);
 
     if (error) throw error;
