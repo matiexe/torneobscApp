@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Match, Team } from '@/lib/standings';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Shield, Settings, Trophy, Image as ImageIcon, Users, Plus, LogOut, LayoutDashboard, Flag, Share2, Trash2 } from 'lucide-react';
+import { Shield, Settings, Trophy, Image as ImageIcon, Users, Plus, LogOut, LayoutDashboard, Flag, Share2, Trash2, Loader2 } from 'lucide-react';
 import { MatchScoreForm } from '@/components/shared/MatchScoreForm';
 import { TeamEditForm } from '@/components/shared/TeamEditForm';
 import { PlayerAddForm } from '@/components/shared/PlayerAddForm';
@@ -84,6 +84,7 @@ export default function AdminPage() {
   async function deletePlayer(playerId: string) {
     if (!confirm('¿Estás seguro de eliminar este jugador? Esta acción no se puede deshacer.')) return;
     
+    setDeletingId(playerId);
     const { error } = await supabase
       .from('players')
       .delete()
@@ -93,8 +94,9 @@ export default function AdminPage() {
       console.error(error);
       alert('Error al eliminar el jugador');
     } else {
-      fetchData();
+      await fetchData();
     }
+    setDeletingId(null);
   }
 
   async function deleteTeam(teamId: string) {
@@ -348,21 +350,14 @@ export default function AdminPage() {
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="text-[#ffb4ab] hover:bg-[#ffb4ab]/10 hover:text-white h-10 w-10"
+                      className="text-red-500 hover:bg-red-500/20 hover:text-red-400 h-10 w-10 transition-colors"
                       onClick={() => deletePlayer(player.id)}
+                      disabled={deletingId === player.id}
+                      title="Eliminar Jugador"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      {deletingId === player.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                     </Button>
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </main>
-    </div>
-  );
-}
                 </div>
               ))}
             </div>

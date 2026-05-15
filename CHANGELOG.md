@@ -2,6 +2,13 @@
 
 All notable changes to the **Súper Liga BSC** project will be documented in this file.
 
+## [0.2.3] - 2026-05-14
+
+### Fixed
+- **Build Error:** Fixed a syntax error in the admin page caused by code duplication during previous updates.
+
+---
+
 ## [0.2.2] - 2026-05-14
 
 ### Updated
