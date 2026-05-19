@@ -53,6 +53,10 @@ export default function AdminPage() {
     const { data: { session } } = await supabase.auth.getSession();
     console.log("Auth Status:", session ? `Conectado como ${session.user.email}` : "No autenticado");
     console.log("Role:", session?.user?.role || "anon");
+    
+    if (!session && window.location.pathname.includes('admin')) {
+       console.error("ALERTA: Accediendo a admin sin sesión activa en el cliente.");
+    }
   }
 
   async function fetchData() {
@@ -133,7 +137,7 @@ export default function AdminPage() {
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
 
-    const targetId = deleteTarget.id;
+    const targetId = deleteTarget.id.trim(); // Limpieza preventiva
     const targetType = deleteTarget.type;
     
     setDeletingId(targetId);
@@ -145,34 +149,37 @@ export default function AdminPage() {
       else if (targetType === 'team') table = 'teams';
       else if (targetType === 'match') table = 'matches';
 
-      // Usamos .select() para verificar si realmente se borró algo
+      // 1. Intentamos borrar y pedir que devuelva la fila borrada
       const { data, error, status } = await supabase
         .from(table)
         .delete()
         .eq('id', targetId)
         .select();
 
-      console.log(`Intento de eliminación en ${table}:`, { targetId, status, data });
+      console.log(`Resultado de eliminación en ${table}:`, { targetId, status, data });
 
       if (error) throw error;
 
+      // Si data está vacío, la política de RLS bloqueó el borrado silenciosamente
       if (!data || data.length === 0) {
-        throw new Error("La base de datos denegó la eliminación. Probablemente tu sesión expiró.");
+        console.error("RLS BLOCK: Supabase devolvió 200/204 pero no borró nada.");
+        throw new Error("Permiso denegado por la base de datos (RLS). Tu usuario está conectado pero no tiene permiso de escritura real.");
       }
       
-      toast.success(`${targetType === 'player' ? 'Jugador' : targetType === 'team' ? 'Equipo' : 'Partido'} eliminado con éxito`);
+      toast.success(`${targetType === 'player' ? 'Jugador' : targetType === 'team' ? 'Equipo' : 'Partido'} eliminado correctamente`);
       
-      // Actualización local
+      // Actualización inmediata de la UI
       if (targetType === 'player') setPlayers(prev => prev.filter(p => p.id !== targetId));
       if (targetType === 'team') setTeams(prev => prev.filter(t => t.id !== targetId));
       if (targetType === 'match') setMatches(prev => prev.filter(m => m.id !== targetId));
       
+      // Recarga suave de respaldo
       await fetchData();
     } catch (error: any) {
-      console.error("Error completo en eliminación:", error);
+      console.error("Error en handleConfirmDelete:", error);
       toast.error(`No se pudo eliminar: ${error.message}`);
-      if (error.message.includes("denegó")) {
-        toast.info("Prueba cerrando sesión y volviendo a entrar.");
+      if (error.message.includes("RLS")) {
+        toast.info("Asegúrate de haber ejecutado el script SQL de permisos en el Dashboard de Supabase.", { duration: 8000 });
       }
     } finally {
       setDeletingId(null);
