@@ -45,6 +45,17 @@ export default function AdminPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // Debug Auth Session
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log("Current session:", session);
+      if (!session) {
+        console.warn("No active session found on client side");
+        // toast.error("Tu sesión ha expirado. Por favor, reingresa.");
+      }
+    };
+    
+    checkAuth();
     fetchData();
   }, []);
 

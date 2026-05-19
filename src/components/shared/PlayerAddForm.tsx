@@ -30,6 +30,7 @@ export function PlayerAddForm({ teams, onSave }: PlayerAddFormProps) {
     
     setSaving(true);
     try {
+      // Intentamos insertar
       const { error } = await supabase
         .from('players')
         .insert([{ 
@@ -38,7 +39,10 @@ export function PlayerAddForm({ teams, onSave }: PlayerAddFormProps) {
           goals: goals 
         }]);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase Error:", error);
+        throw error;
+      }
       
       await onSave();
       
@@ -50,9 +54,14 @@ export function PlayerAddForm({ teams, onSave }: PlayerAddFormProps) {
       
       setTimeout(() => setSuccess(false), 2000);
     } catch (error: any) {
-      console.error("Error adding player:", error);
-      // Mostrar el mensaje de error real de Supabase
-      toast.error(`Error: ${error.message || 'Verifica permisos o conexión'}`);
+      console.error("Catch Error adding player:", error);
+      // Mostrar el mensaje de error real de Supabase o uno amigable
+      const msg = error.message || 'Verifica permisos o conexión';
+      toast.error(`No se pudo agregar: ${msg}`);
+      
+      if (msg.includes('row-level security')) {
+        toast.info("Tip: Prueba cerrando sesión y volviendo a entrar para refrescar tus permisos.", { duration: 5000 });
+      }
     } finally {
       setSaving(false);
     }
@@ -77,12 +86,9 @@ export function PlayerAddForm({ teams, onSave }: PlayerAddFormProps) {
         
         <div className="md:col-span-4">
           <label className="text-[10px] font-bold uppercase text-[#e9c176] tracking-widest ml-1 mb-2 block">Equipo</label>
-          {/* Añadimos una key basada en el length de teams para forzar re-render cuando carguen */}
-          <Select key={teams.length} value={teamId} onValueChange={(val) => setTeamId(val || '')}>
-            <SelectTrigger className="bg-[#0c0f10] border-[#e9c176]/20 h-12 text-white rounded-xl focus:ring-[#e9c176] focus:border-[#e9c176] w-full min-w-[200px]">
-              <SelectValue placeholder="Seleccionar equipo">
-                {teams.find(t => t.id === teamId)?.name}
-              </SelectValue>
+          <Select value={teamId} onValueChange={(val) => setTeamId(val || '')}>
+            <SelectTrigger className="bg-[#0c0f10] border-[#e9c176]/20 h-12 text-white rounded-xl focus:ring-[#e9c176] focus:border-[#e9c176] w-full">
+              <SelectValue placeholder="Seleccionar equipo" />
             </SelectTrigger>
             <SelectContent className="bg-[#1d2021] border-[#e9c176]/20 text-white">
               {teams.map(team => (
