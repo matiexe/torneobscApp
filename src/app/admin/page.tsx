@@ -118,7 +118,7 @@ export default function AdminPage() {
     }
   }
 
-  const handleDeleteClick = (id: string, name: string, type: 'player' | 'team' | 'match') => {
+  const handleDeleteRequest = (id: string, name: string, type: 'player' | 'team' | 'match') => {
     setDeleteTarget({ id, name, type });
     setDeleteConfirmOpen(true);
   };
@@ -294,7 +294,7 @@ export default function AdminPage() {
                     key={match.id} 
                     match={match} 
                     onSave={updateScore} 
-                    onDelete={async (id) => handleDeleteClick(id, `${match.home_team?.name} vs ${match.away_team?.name}`, 'match')} 
+                    onDelete={async (id) => handleDeleteRequest(id, `${match.home_team?.name} vs ${match.away_team?.name}`, 'match')} 
                   />
                 ))}
               </div>
@@ -308,7 +308,7 @@ export default function AdminPage() {
                         key={match.id} 
                         match={match} 
                         onSave={updateScore} 
-                        onDelete={async (id) => handleDeleteClick(id, `${match.home_team?.name} vs ${match.away_team?.name}`, 'match')} 
+                        onDelete={async (id) => handleDeleteRequest(id, `${match.home_team?.name} vs ${match.away_team?.name}`, 'match')} 
                       />
                     ))}
                   </div>
@@ -334,7 +334,7 @@ export default function AdminPage() {
                   key={team.id} 
                   team={team} 
                   onSave={fetchData} 
-                  onDelete={async (id) => handleDeleteClick(id, team.name, 'team')} 
+                  onDelete={async (id) => handleDeleteRequest(id, team.name, 'team')} 
                 />
               ))}
             </div>
@@ -388,7 +388,7 @@ export default function AdminPage() {
                       variant="ghost" 
                       size="icon" 
                       className="text-red-500 hover:bg-red-500/20 hover:text-red-400 h-10 w-10 transition-colors"
-                      onClick={() => handleDeleteClick(player.id, player.name, 'player')}
+                      onClick={() => handleDeleteRequest(player.id, player.name, 'player')}
                       disabled={deletingId === player.id}
                       title="Eliminar Jugador"
                     >
@@ -424,7 +424,7 @@ export default function AdminPage() {
               onClick={handleConfirmDelete}
               className="bg-red-600 text-white hover:bg-red-700 rounded-lg text-[10px] font-bold uppercase"
             >
-              Eliminar Permanentemente
+              {deletingId ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Eliminar Permanentemente'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

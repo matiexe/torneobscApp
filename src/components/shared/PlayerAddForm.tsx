@@ -40,7 +40,6 @@ export function PlayerAddForm({ teams, onSave }: PlayerAddFormProps) {
 
       if (error) throw error;
       
-      // Esperar a que la lista se actualice antes de cerrar/limpiar
       await onSave();
       
       toast.success(`Jugador ${trimmedName} registrado con éxito`);
@@ -50,9 +49,10 @@ export function PlayerAddForm({ teams, onSave }: PlayerAddFormProps) {
       setGoals(0);
       
       setTimeout(() => setSuccess(false), 2000);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error adding player:", error);
-      toast.error('Error al agregar el jugador. Verifica permisos o conexión.');
+      // Mostrar el mensaje de error real de Supabase
+      toast.error(`Error: ${error.message || 'Verifica permisos o conexión'}`);
     } finally {
       setSaving(false);
     }
@@ -77,9 +77,12 @@ export function PlayerAddForm({ teams, onSave }: PlayerAddFormProps) {
         
         <div className="md:col-span-4">
           <label className="text-[10px] font-bold uppercase text-[#e9c176] tracking-widest ml-1 mb-2 block">Equipo</label>
-          <Select value={teamId} onValueChange={(val) => setTeamId(val || '')}>
-            <SelectTrigger className="bg-[#0c0f10] border-[#e9c176]/20 h-12 text-white rounded-xl focus:ring-[#e9c176] focus:border-[#e9c176]">
-              <SelectValue placeholder="Seleccionar equipo" />
+          {/* Añadimos una key basada en el length de teams para forzar re-render cuando carguen */}
+          <Select key={teams.length} value={teamId} onValueChange={(val) => setTeamId(val || '')}>
+            <SelectTrigger className="bg-[#0c0f10] border-[#e9c176]/20 h-12 text-white rounded-xl focus:ring-[#e9c176] focus:border-[#e9c176] w-full min-w-[200px]">
+              <SelectValue placeholder="Seleccionar equipo">
+                {teams.find(t => t.id === teamId)?.name}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="bg-[#1d2021] border-[#e9c176]/20 text-white">
               {teams.map(team => (
