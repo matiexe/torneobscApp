@@ -21,25 +21,36 @@ export function PlayerAddForm({ teams, onSave }: PlayerAddFormProps) {
   const [success, setSuccess] = useState(false);
 
   const handleAdd = async () => {
-    if (!name || !teamId) return;
+    const trimmedName = name.trim();
+    if (!trimmedName || !teamId) {
+      alert("Por favor ingresa un nombre y selecciona un equipo.");
+      return;
+    }
     
     setSaving(true);
     try {
       const { error } = await supabase
         .from('players')
-        .insert([{ name, team_id: teamId, goals }]);
+        .insert([{ 
+          name: trimmedName, 
+          team_id: teamId, 
+          goals: goals 
+        }]);
 
       if (error) throw error;
       
+      // Esperar a que la lista se actualice antes de cerrar/limpiar
       await onSave();
+      
       setSuccess(true);
       setName('');
       setTeamId('');
       setGoals(0);
+      
       setTimeout(() => setSuccess(false), 2000);
     } catch (error) {
-      console.error(error);
-      alert('Error al agregar el jugador');
+      console.error("Error adding player:", error);
+      alert('Error al agregar el jugador. Verifica permisos o conexión.');
     } finally {
       setSaving(false);
     }

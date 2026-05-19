@@ -35,22 +35,32 @@ export default function AdminPage() {
   }, []);
 
   async function fetchData() {
-    const { data: mData } = await supabase
-      .from('matches')
-      .select('*, home_team:teams!home_team_id(*), away_team:teams!away_team_id(*)')
-      .order('match_date', { ascending: true });
-    
-    const { data: pData } = await supabase
-      .from('players')
-      .select('id, name, goals, team:teams(name)')
-      .order('goals', { ascending: false });
+    setLoading(true);
+    try {
+      const { data: mData, error: mError } = await supabase
+        .from('matches')
+        .select('*, home_team:teams!home_team_id(*), away_team:teams!away_team_id(*)')
+        .order('match_date', { ascending: true });
+      
+      const { data: pData, error: pError } = await supabase
+        .from('players')
+        .select('id, name, goals, team_id, team:teams(name)')
+        .order('goals', { ascending: false });
 
-    const { data: tData } = await supabase.from('teams').select('*').order('name');
+      const { data: tData, error: tError } = await supabase.from('teams').select('*').order('name');
 
-    if (mData) setMatches(mData);
-    if (pData) setPlayers(pData as any);
-    if (tData) setTeams(tData);
-    setLoading(false);
+      if (mError) throw mError;
+      if (pError) throw pError;
+      if (tError) throw tError;
+
+      if (mData) setMatches(mData);
+      if (pData) setPlayers(pData as unknown as Player[]);
+      if (tData) setTeams(tData);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function updateScore(matchId: string, homeScore: number, awayScore: number, streamUrl?: string) {
@@ -67,8 +77,12 @@ export default function AdminPage() {
       .update(updateData)
       .eq('id', matchId);
 
-    if (error) throw error;
-    fetchData();
+    if (error) {
+      console.error(error);
+      alert("Error al actualizar el marcador");
+    } else {
+      fetchData();
+    }
   }
 
   async function updatePlayerGoals(playerId: string, goals: number) {
@@ -77,26 +91,36 @@ export default function AdminPage() {
       .update({ goals: goals })
       .eq('id', playerId);
 
-    if (error) console.error(error);
-    fetchData();
+    if (error) {
+      console.error(error);
+      alert("Error al actualizar goles");
+    } else {
+      fetchData();
+    }
   }
 
   async function deletePlayer(playerId: string) {
-    if (!confirm('¿Estás seguro de eliminar este jugador? Esta acción no se puede deshacer.')) return;
+    const player = players.find(p => p.id === playerId);
+    if (!player) return;
+
+    if (!window.confirm(`¿Estás seguro de eliminar al jugador "${player.name}"? Esta acción no se puede deshacer.`)) return;
     
     setDeletingId(playerId);
-    const { error } = await supabase
-      .from('players')
-      .delete()
-      .eq('id', playerId);
+    try {
+      const { error } = await supabase
+        .from('players')
+        .delete()
+        .eq('id', playerId);
 
-    if (error) {
-      console.error(error);
-      alert('Error al eliminar el jugador');
-    } else {
+      if (error) throw error;
+      
       await fetchData();
+    } catch (error) {
+      console.error("Error deleting player:", error);
+      alert('Error al eliminar el jugador. Verifica permisos de administrador.');
+    } finally {
+      setDeletingId(null);
     }
-    setDeletingId(null);
   }
 
   async function deleteTeam(teamId: string) {
@@ -329,10 +353,10 @@ export default function AdminPage() {
             )}
 
             <div className="glass-panel rounded-xl overflow-hidden divide-y divide-[#44474d]/20">
-              {players.map(player => (
+              {players.map((player) => (
                 <div key={player.id} className="flex items-center justify-between gap-4 p-4 hover:bg-[#e9c176]/5 transition-colors">
                   <div className="flex items-center gap-3 flex-1 overflow-hidden">
-                    <div className="w-10 h-10 rounded-lg border border-[#44474d]/30 bg-white/5 p-1 flex items-center justify-center overflow-hidden shrink-0">
+                    <div className="w-10 h-10 rounded-lg border border-[#44474d]/30 bg-[#ffffff0d] p-1 flex items-center justify-center overflow-hidden shrink-0">
                       <img src={getTeamLogo(player.team?.name)} alt="" className="w-full h-full object-contain" />
                     </div>
                     <div className="overflow-hidden">
@@ -355,7 +379,11 @@ export default function AdminPage() {
                       disabled={deletingId === player.id}
                       title="Eliminar Jugador"
                     >
-                      {deletingId === player.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      {deletingId === player.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
