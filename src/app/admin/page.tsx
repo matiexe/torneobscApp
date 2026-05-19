@@ -45,17 +45,6 @@ export default function AdminPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Debug Auth Session
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log("Current session:", session);
-      if (!session) {
-        console.warn("No active session found on client side");
-        // toast.error("Tu sesión ha expirado. Por favor, reingresa.");
-      }
-    };
-    
-    checkAuth();
     fetchData();
   }, []);
 
@@ -137,27 +126,45 @@ export default function AdminPage() {
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
 
-    setDeletingId(deleteTarget.id);
+    const targetId = deleteTarget.id;
+    const targetType = deleteTarget.type;
+    
+    setDeletingId(targetId);
     setDeleteConfirmOpen(false);
 
     try {
       let table = '';
-      if (deleteTarget.type === 'player') table = 'players';
-      else if (deleteTarget.type === 'team') table = 'teams';
-      else if (deleteTarget.type === 'match') table = 'matches';
+      if (targetType === 'player') table = 'players';
+      else if (targetType === 'team') table = 'teams';
+      else if (targetType === 'match') table = 'matches';
 
-      const { error } = await supabase
+      console.log(`Intentando eliminar de ${table} id: ${targetId}`);
+
+      const { error, status } = await supabase
         .from(table)
         .delete()
-        .eq('id', deleteTarget.id);
+        .eq('id', targetId);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase Delete Error:", error);
+        throw error;
+      }
       
-      toast.success(`${deleteTarget.type === 'player' ? 'Jugador' : deleteTarget.type === 'team' ? 'Equipo' : 'Partido'} eliminado`);
+      // Supabase a veces no devuelve error pero el status indica si fue exitoso (204 es OK)
+      console.log("Status de eliminación:", status);
+      
+      toast.success(`${targetType === 'player' ? 'Jugador' : targetType === 'team' ? 'Equipo' : 'Partido'} eliminado con éxito`);
+      
+      // Forzar actualización inmediata del estado local antes de re-fetch
+      if (targetType === 'player') setPlayers(prev => prev.filter(p => p.id !== targetId));
+      if (targetType === 'team') setTeams(prev => prev.filter(t => t.id !== targetId));
+      if (targetType === 'match') setMatches(prev => prev.filter(m => m.id !== targetId));
+      
       await fetchData();
     } catch (error: any) {
-      console.error("Error deleting:", error);
-      toast.error(`Error al eliminar: ${error.message || 'Verifica permisos'}`);
+      console.error("Error completo en eliminación:", error);
+      const msg = error.message || 'Error desconocido';
+      toast.error(`No se pudo eliminar: ${msg}`);
     } finally {
       setDeletingId(null);
       setDeleteTarget(null);
