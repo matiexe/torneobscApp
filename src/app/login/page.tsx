@@ -52,7 +52,7 @@ export default function LoginPage() {
           <CardDescription className="text-[#c5c6cd]">Ingresa tus credenciales para gestionar el torneo.</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6 pb-8">
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase text-[#e9c176] tracking-widest ml-1">Email</label>
               <Input 
@@ -61,7 +61,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-[#111415] border-[#44474d] text-white focus:border-[#e9c176] transition-colors"
+                className="bg-[#111415] border-[#44474d] text-white focus:border-[#e9c176] transition-colors h-12"
               />
             </div>
             <div className="space-y-2">
@@ -72,7 +72,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="bg-[#111415] border-[#44474d] text-white focus:border-[#e9c176] transition-colors"
+                className="bg-[#111415] border-[#44474d] text-white focus:border-[#e9c176] transition-colors h-12"
               />
             </div>
             {error && (
@@ -81,7 +81,7 @@ export default function LoginPage() {
               </p>
             )}
           </CardContent>
-          <CardFooter>
+          <CardFooter className="pt-2">
             <Button 
               type="submit" 
               disabled={loading}
