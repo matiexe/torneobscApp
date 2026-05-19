@@ -12,6 +12,16 @@ import { PlayerAddForm } from '@/components/shared/PlayerAddForm';
 import { useRouter } from 'next/navigation';
 import { getTeamLogo } from '@/lib/utils';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Player {
   id: string;
@@ -29,6 +39,9 @@ export default function AdminPage() {
   const [activeSubTab, setActiveSubTab] = useState<'matches' | 'teams' | 'players'>('matches');
   const [showPlayerAdd, setShowPlayerAdd] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string, name: string, type: 'player' | 'team' | 'match' } | null>(null);
+  
   const router = useRouter();
 
   useEffect(() => {
@@ -105,67 +118,40 @@ export default function AdminPage() {
     }
   }
 
-  async function deletePlayer(playerId: string) {
-    const player = players.find(p => p.id === playerId);
-    if (!player) return;
+  const handleDeleteClick = (id: string, name: string, type: 'player' | 'team' | 'match') => {
+    setDeleteTarget({ id, name, type });
+    setDeleteConfirmOpen(true);
+  };
 
-    if (!window.confirm(`¿Estás seguro de eliminar al jugador "${player.name}"? Esta acción no se puede deshacer.`)) return;
-    
-    setDeletingId(playerId);
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+
+    setDeletingId(deleteTarget.id);
+    setDeleteConfirmOpen(false);
+
     try {
+      let table = '';
+      if (deleteTarget.type === 'player') table = 'players';
+      else if (deleteTarget.type === 'team') table = 'teams';
+      else if (deleteTarget.type === 'match') table = 'matches';
+
       const { error } = await supabase
-        .from('players')
+        .from(table)
         .delete()
-        .eq('id', playerId);
+        .eq('id', deleteTarget.id);
 
       if (error) throw error;
       
-      toast.success(`Jugador ${player.name} eliminado`);
+      toast.success(`${deleteTarget.type === 'player' ? 'Jugador' : deleteTarget.type === 'team' ? 'Equipo' : 'Partido'} eliminado`);
       await fetchData();
-    } catch (error) {
-      console.error("Error deleting player:", error);
-      toast.error('Error al eliminar el jugador. Verifica permisos.');
+    } catch (error: any) {
+      console.error("Error deleting:", error);
+      toast.error(`Error al eliminar: ${error.message || 'Verifica permisos'}`);
     } finally {
       setDeletingId(null);
+      setDeleteTarget(null);
     }
-  }
-
-  async function deleteTeam(teamId: string) {
-    const team = teams.find(t => t.id === teamId);
-    if (!window.confirm(`¿Estás seguro de eliminar el equipo "${team?.name}"? Se podrían ver afectados los partidos asociados.`)) return;
-    
-    try {
-      const { error } = await supabase
-        .from('teams')
-        .delete()
-        .eq('id', teamId);
-
-      if (error) throw error;
-      toast.success("Equipo eliminado correctamente");
-      fetchData();
-    } catch (error) {
-      console.error(error);
-      toast.error('Error al eliminar el equipo. Asegúrate de que no tenga partidos asociados.');
-    }
-  }
-
-  async function deleteMatch(matchId: string) {
-    if (!window.confirm('¿Estás seguro de eliminar este partido?')) return;
-    
-    try {
-      const { error } = await supabase
-        .from('matches')
-        .delete()
-        .eq('id', matchId);
-
-      if (error) throw error;
-      toast.success("Partido eliminado");
-      fetchData();
-    } catch (error) {
-      console.error(error);
-      toast.error('Error al eliminar el partido');
-    }
-  }
+  };
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -304,7 +290,12 @@ export default function AdminPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {matches.filter(m => m.status === 'pending').map(match => (
-                  <MatchScoreForm key={match.id} match={match} onSave={updateScore} onDelete={deleteMatch} />
+                  <MatchScoreForm 
+                    key={match.id} 
+                    match={match} 
+                    onSave={updateScore} 
+                    onDelete={async (id) => handleDeleteClick(id, `${match.home_team?.name} vs ${match.away_team?.name}`, 'match')} 
+                  />
                 ))}
               </div>
 
@@ -313,7 +304,12 @@ export default function AdminPage() {
                   <h4 className="font-anybody text-sm font-bold text-[#c5c6cd] uppercase tracking-widest pt-4">Resultados Recientes</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {matches.filter(m => m.status === 'finished').slice(-4).map(match => (
-                      <MatchScoreForm key={match.id} match={match} onSave={updateScore} onDelete={deleteMatch} />
+                      <MatchScoreForm 
+                        key={match.id} 
+                        match={match} 
+                        onSave={updateScore} 
+                        onDelete={async (id) => handleDeleteClick(id, `${match.home_team?.name} vs ${match.away_team?.name}`, 'match')} 
+                      />
                     ))}
                   </div>
                 </>
@@ -334,7 +330,12 @@ export default function AdminPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {teams.map(team => (
-                <TeamEditForm key={team.id} team={team} onSave={fetchData} onDelete={deleteTeam} />
+                <TeamEditForm 
+                  key={team.id} 
+                  team={team} 
+                  onSave={fetchData} 
+                  onDelete={async (id) => handleDeleteClick(id, team.name, 'team')} 
+                />
               ))}
             </div>
           </div>
@@ -387,7 +388,7 @@ export default function AdminPage() {
                       variant="ghost" 
                       size="icon" 
                       className="text-red-500 hover:bg-red-500/20 hover:text-red-400 h-10 w-10 transition-colors"
-                      onClick={() => deletePlayer(player.id)}
+                      onClick={() => handleDeleteClick(player.id, player.name, 'player')}
                       disabled={deletingId === player.id}
                       title="Eliminar Jugador"
                     >
@@ -404,6 +405,30 @@ export default function AdminPage() {
           </div>
         )}
       </main>
+
+      {/* Global Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent className="bg-[#1d2021] border border-[#e9c176]/30 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-anybody text-[#e9c176] uppercase italic">¿Confirmar eliminación?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[#c5c6cd] text-xs">
+              Estás a punto de eliminar a <span className="text-white font-bold">"{deleteTarget?.name}"</span>. 
+              Esta acción es permanente y no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-white rounded-lg text-[10px] font-bold uppercase">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-red-600 text-white hover:bg-red-700 rounded-lg text-[10px] font-bold uppercase"
+            >
+              Eliminar Permanentemente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
