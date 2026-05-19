@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Check, Loader2, Save, Trash2 } from 'lucide-react';
 import { getTeamLogo } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface TeamEditFormProps {
   team: Team;
@@ -31,11 +32,12 @@ export function TeamEditForm({ team, onSave, onDelete }: TeamEditFormProps) {
       if (error) throw error;
       
       await onSave();
+      toast.success("Equipo actualizado");
       setSuccess(true);
       setTimeout(() => setSuccess(false), 2000);
     } catch (error) {
       console.error(error);
-      alert('Error al guardar el equipo');
+      toast.error('Error al guardar el equipo');
     } finally {
       setSaving(false);
     }
