@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Check, Loader2, Plus, UserPlus } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface PlayerAddFormProps {
   teams: Team[];
@@ -23,7 +24,7 @@ export function PlayerAddForm({ teams, onSave }: PlayerAddFormProps) {
   const handleAdd = async () => {
     const trimmedName = name.trim();
     if (!trimmedName || !teamId) {
-      alert("Por favor ingresa un nombre y selecciona un equipo.");
+      toast.error("Por favor ingresa un nombre y selecciona un equipo.");
       return;
     }
     
@@ -42,6 +43,7 @@ export function PlayerAddForm({ teams, onSave }: PlayerAddFormProps) {
       // Esperar a que la lista se actualice antes de cerrar/limpiar
       await onSave();
       
+      toast.success(`Jugador ${trimmedName} registrado con éxito`);
       setSuccess(true);
       setName('');
       setTeamId('');
@@ -50,7 +52,7 @@ export function PlayerAddForm({ teams, onSave }: PlayerAddFormProps) {
       setTimeout(() => setSuccess(false), 2000);
     } catch (error) {
       console.error("Error adding player:", error);
-      alert('Error al agregar el jugador. Verifica permisos o conexión.');
+      toast.error('Error al agregar el jugador. Verifica permisos o conexión.');
     } finally {
       setSaving(false);
     }
@@ -75,7 +77,7 @@ export function PlayerAddForm({ teams, onSave }: PlayerAddFormProps) {
         
         <div className="md:col-span-4">
           <label className="text-[10px] font-bold uppercase text-[#e9c176] tracking-widest ml-1 mb-2 block">Equipo</label>
-          <Select value={teamId} onValueChange={(val) => val && setTeamId(val)}>
+          <Select value={teamId} onValueChange={(val) => setTeamId(val)}>
             <SelectTrigger className="bg-[#0c0f10] border-[#e9c176]/20 h-12 text-white rounded-xl focus:ring-[#e9c176] focus:border-[#e9c176]">
               <SelectValue placeholder="Seleccionar equipo" />
             </SelectTrigger>

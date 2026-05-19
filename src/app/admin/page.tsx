@@ -10,9 +10,7 @@ import { MatchScoreForm } from '@/components/shared/MatchScoreForm';
 import { TeamEditForm } from '@/components/shared/TeamEditForm';
 import { PlayerAddForm } from '@/components/shared/PlayerAddForm';
 import { useRouter } from 'next/navigation';
-import { getTeamLogo } from '@/lib/utils';
-
-interface Player {
+import { getTeamLogo } from '@/lib/utils';`r`nimport { toast } from 'sonner';`r`n`r`ninterface Player {
   id: string;
   name: string;
   goals: number;
@@ -57,7 +55,7 @@ export default function AdminPage() {
       if (pData) setPlayers(pData as unknown as Player[]);
       if (tData) setTeams(tData);
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error(\"Error fetching data:\", error); toast.error(\"Error al cargar datos\");
     } finally {
       setLoading(false);
     }
@@ -79,7 +77,7 @@ export default function AdminPage() {
 
     if (error) {
       console.error(error);
-      alert("Error al actualizar el marcador");
+      toast.error(\"Error al actualizar el marcador\");
     } else {
       fetchData();
     }
@@ -93,7 +91,7 @@ export default function AdminPage() {
 
     if (error) {
       console.error(error);
-      alert("Error al actualizar goles");
+      toast.error(\"Error al actualizar goles\");
     } else {
       fetchData();
     }
@@ -114,19 +112,16 @@ export default function AdminPage() {
 
       if (error) throw error;
       
-      await fetchData();
+      toast.success(`Jugador ${player.name} eliminado`); toast.success(`Jugador ${player.name} eliminado`); await fetchData();
     } catch (error) {
       console.error("Error deleting player:", error);
-      alert('Error al eliminar el jugador. Verifica permisos de administrador.');
+      toast.error('Error al eliminar el jugador. Verifica permisos.');
     } finally {
       setDeletingId(null);
     }
   }
 
-  async function deleteTeam(teamId: string) {
-    if (!confirm('Â¿EstÃ¡s seguro de eliminar este equipo? Se podrÃ­an ver afectados los partidos asociados.')) return;
-    
-    const { error } = await supabase
+  async function deleteTeam(teamId: string) { const team = teams.find(t => t.id === teamId); if (!window.confirm(`¿Estás seguro de eliminar el equipo \"${team?.name}\"?`)) return; try { const { error } = await supabase.from('teams').delete().eq('id', teamId); if (error) throw error; toast.success('Equipo eliminado'); fetchData(); } catch (error) { console.error(error); toast.error('Error al eliminar el equipo'); } }\"?`)) return; try { const { error } = await supabase.from('teams').delete().eq('id', teamId); if (error) throw error; toast.success('Equipo eliminado'); fetchData(); } catch (error) { console.error(error); toast.error('Error al eliminar el equipo'); } } = await supabase
       .from('teams')
       .delete()
       .eq('id', teamId);
@@ -139,10 +134,7 @@ export default function AdminPage() {
     }
   }
 
-  async function deleteMatch(matchId: string) {
-    if (!confirm('Â¿EstÃ¡s seguro de eliminar este partido?')) return;
-    
-    const { error } = await supabase
+  async function deleteMatch(matchId: string) { if (!window.confirm('¿Estás seguro de eliminar este partido?')) return; try { const { error } = await supabase.from('matches').delete().eq('id', matchId); if (error) throw error; toast.success('Partido eliminado'); fetchData(); } catch (error) { console.error(error); toast.error('Error al eliminar el partido'); } } = await supabase.from('matches').delete().eq('id', matchId); if (error) throw error; toast.success('Partido eliminado'); fetchData(); } catch (error) { console.error(error); toast.error('Error al eliminar el partido'); } } = await supabase
       .from('matches')
       .delete()
       .eq('id', matchId);
@@ -346,7 +338,7 @@ export default function AdminPage() {
               <PlayerAddForm 
                 teams={teams} 
                 onSave={async () => {
-                  await fetchData();
+                  toast.success(`Jugador ${player.name} eliminado`); toast.success(`Jugador ${player.name} eliminado`); await fetchData();
                   setShowPlayerAdd(false);
                 }} 
               />
@@ -395,3 +387,22 @@ export default function AdminPage() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
 
 import { Anybody } from "next/font/google";
 import "./globals.css";
@@ -26,7 +27,10 @@ export default function RootLayout({
       lang="es"
       className={`${anybody.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        {children}
+        <Toaster position="top-center" richColors />
+      </body>
     </html>
   );
 }
