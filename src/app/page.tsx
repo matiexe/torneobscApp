@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { calculateStandings, StandingEntry, Match, Team } from '@/lib/standings';
-import { Bell, Calendar, ListOrdered, Swords, Trophy, Users } from 'lucide-react';
+import { Bell, Calendar, ListOrdered, Swords, Trophy, Users, RefreshCw } from 'lucide-react';
 import { MatchCard } from '@/components/shared/MatchCard';
 import { StandingsTable } from '@/components/shared/StandingsTable';
 import { ScorersList } from '@/components/shared/ScorersList';
+import { TeamFormList } from '@/components/shared/TeamFormList';
 
 interface Player {
   id: string;
@@ -218,6 +219,15 @@ export default function Home() {
                       <Trophy className="w-5 h-5 text-[#e9c176] opacity-50" />
                     </div>
                     <ScorersList players={players.slice(0, 5)} variant="compact" />
+                  </div>
+
+                  {/* Team Form Card */}
+                  <div className="glass-panel rounded-xl overflow-hidden p-6 border-[#e9c176]/20">
+                    <div className="flex items-center justify-between mb-6">
+                      <h4 className="font-anybody text-lg font-bold text-[#e9c176] uppercase italic">Estado de Forma</h4>
+                      <RefreshCw className="w-5 h-5 text-[#e9c176] opacity-50" />
+                    </div>
+                    <TeamFormList standings={standings} />
                   </div>
 
                   {/* Quick Info Box */}
