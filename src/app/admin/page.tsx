@@ -10,7 +10,10 @@ import { MatchScoreForm } from '@/components/shared/MatchScoreForm';
 import { TeamEditForm } from '@/components/shared/TeamEditForm';
 import { PlayerAddForm } from '@/components/shared/PlayerAddForm';
 import { useRouter } from 'next/navigation';
-import { getTeamLogo } from '@/lib/utils';`r`nimport { toast } from 'sonner';`r`n`r`ninterface Player {
+import { getTeamLogo } from '@/lib/utils';
+import { toast } from 'sonner';
+
+interface Player {
   id: string;
   name: string;
   goals: number;
@@ -55,7 +58,8 @@ export default function AdminPage() {
       if (pData) setPlayers(pData as unknown as Player[]);
       if (tData) setTeams(tData);
     } catch (error) {
-      console.error(\"Error fetching data:\", error); toast.error(\"Error al cargar datos\");
+      console.error("Error fetching data:", error);
+      toast.error("Error al cargar los datos de la liga");
     } finally {
       setLoading(false);
     }
@@ -70,30 +74,34 @@ export default function AdminPage() {
       updateData.status = 'finished';
     }
 
-    const { error } = await supabase
-      .from('matches')
-      .update(updateData)
-      .eq('id', matchId);
+    try {
+      const { error } = await supabase
+        .from('matches')
+        .update(updateData)
+        .eq('id', matchId);
 
-    if (error) {
-      console.error(error);
-      toast.error(\"Error al actualizar el marcador\");
-    } else {
+      if (error) throw error;
+      toast.success("Marcador actualizado correctamente");
       fetchData();
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al actualizar el marcador");
     }
   }
 
   async function updatePlayerGoals(playerId: string, goals: number) {
-    const { error } = await supabase
-      .from('players')
-      .update({ goals: goals })
-      .eq('id', playerId);
+    try {
+      const { error } = await supabase
+        .from('players')
+        .update({ goals: goals })
+        .eq('id', playerId);
 
-    if (error) {
-      console.error(error);
-      toast.error(\"Error al actualizar goles\");
-    } else {
+      if (error) throw error;
+      toast.success("Goles actualizados");
       fetchData();
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al actualizar goles");
     }
   }
 
@@ -112,7 +120,8 @@ export default function AdminPage() {
 
       if (error) throw error;
       
-      toast.success(`Jugador ${player.name} eliminado`); toast.success(`Jugador ${player.name} eliminado`); await fetchData();
+      toast.success(`Jugador ${player.name} eliminado`);
+      await fetchData();
     } catch (error) {
       console.error("Error deleting player:", error);
       toast.error('Error al eliminar el jugador. Verifica permisos.');
@@ -121,29 +130,40 @@ export default function AdminPage() {
     }
   }
 
-  async function deleteTeam(teamId: string) { const team = teams.find(t => t.id === teamId); if (!window.confirm(`¿Estás seguro de eliminar el equipo \"${team?.name}\"?`)) return; try { const { error } = await supabase.from('teams').delete().eq('id', teamId); if (error) throw error; toast.success('Equipo eliminado'); fetchData(); } catch (error) { console.error(error); toast.error('Error al eliminar el equipo'); } }\"?`)) return; try { const { error } = await supabase.from('teams').delete().eq('id', teamId); if (error) throw error; toast.success('Equipo eliminado'); fetchData(); } catch (error) { console.error(error); toast.error('Error al eliminar el equipo'); } } = await supabase
-      .from('teams')
-      .delete()
-      .eq('id', teamId);
+  async function deleteTeam(teamId: string) {
+    const team = teams.find(t => t.id === teamId);
+    if (!window.confirm(`Â¿EstÃ¡s seguro de eliminar el equipo "${team?.name}"? Se podrÃ­an ver afectados los partidos asociados.`)) return;
+    
+    try {
+      const { error } = await supabase
+        .from('teams')
+        .delete()
+        .eq('id', teamId);
 
-    if (error) {
-      console.error(error);
-      alert('Error al eliminar el equipo (AsegÃºrate de que no tenga partidos asociados)');
-    } else {
+      if (error) throw error;
+      toast.success("Equipo eliminado correctamente");
       fetchData();
+    } catch (error) {
+      console.error(error);
+      toast.error('Error al eliminar el equipo. AsegÃºrate de que no tenga partidos asociados.');
     }
   }
 
-  async function deleteMatch(matchId: string) { if (!window.confirm('¿Estás seguro de eliminar este partido?')) return; try { const { error } = await supabase.from('matches').delete().eq('id', matchId); if (error) throw error; toast.success('Partido eliminado'); fetchData(); } catch (error) { console.error(error); toast.error('Error al eliminar el partido'); } } = await supabase.from('matches').delete().eq('id', matchId); if (error) throw error; toast.success('Partido eliminado'); fetchData(); } catch (error) { console.error(error); toast.error('Error al eliminar el partido'); } } = await supabase
-      .from('matches')
-      .delete()
-      .eq('id', matchId);
+  async function deleteMatch(matchId: string) {
+    if (!window.confirm('Â¿EstÃ¡s seguro de eliminar este partido?')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('matches')
+        .delete()
+        .eq('id', matchId);
 
-    if (error) {
-      console.error(error);
-      alert('Error al eliminar el partido');
-    } else {
+      if (error) throw error;
+      toast.success("Partido eliminado");
       fetchData();
+    } catch (error) {
+      console.error(error);
+      toast.error('Error al eliminar el partido');
     }
   }
 
@@ -256,7 +276,7 @@ export default function AdminPage() {
                   await navigator.share(shareData);
                 } else {
                   await navigator.clipboard.writeText(shareUrl);
-                  alert('Enlace del banner copiado al portapapeles');
+                  toast.success('Enlace del banner copiado al portapapeles');
                 }
               } catch (err) {
                 console.error('Error al compartir:', err);
@@ -338,7 +358,7 @@ export default function AdminPage() {
               <PlayerAddForm 
                 teams={teams} 
                 onSave={async () => {
-                  toast.success(`Jugador ${player.name} eliminado`); toast.success(`Jugador ${player.name} eliminado`); await fetchData();
+                  await fetchData();
                   setShowPlayerAdd(false);
                 }} 
               />
@@ -387,22 +407,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
