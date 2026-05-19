@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Match, Team } from '@/lib/standings';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Shield, Settings, Trophy, Image as ImageIcon, Users, Plus, LogOut, LayoutDashboard, Flag, Share2, Trash2, Loader2 } from 'lucide-react';
+import { Shield, Settings, Trophy, Image as ImageIcon, Users, Plus, LogOut, LayoutDashboard, Flag, Share2, Trash2, Loader2, RefreshCw } from 'lucide-react';
 import { MatchScoreForm } from '@/components/shared/MatchScoreForm';
 import { TeamEditForm } from '@/components/shared/TeamEditForm';
 import { PlayerAddForm } from '@/components/shared/PlayerAddForm';
@@ -46,7 +46,14 @@ export default function AdminPage() {
 
   useEffect(() => {
     fetchData();
+    checkSession();
   }, []);
+
+  async function checkSession() {
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log("Auth Status:", session ? `Conectado como ${session.user.email}` : "No autenticado");
+    console.log("Role:", session?.user?.role || "anon");
+  }
 
   async function fetchData() {
     setLoading(true);
@@ -138,24 +145,24 @@ export default function AdminPage() {
       else if (targetType === 'team') table = 'teams';
       else if (targetType === 'match') table = 'matches';
 
-      console.log(`Intentando eliminar de ${table} id: ${targetId}`);
-
-      const { error, status } = await supabase
+      // Usamos .select() para verificar si realmente se borró algo
+      const { data, error, status } = await supabase
         .from(table)
         .delete()
-        .eq('id', targetId);
+        .eq('id', targetId)
+        .select();
 
-      if (error) {
-        console.error("Supabase Delete Error:", error);
-        throw error;
+      console.log(`Intento de eliminación en ${table}:`, { targetId, status, data });
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        throw new Error("La base de datos denegó la eliminación. Probablemente tu sesión expiró.");
       }
-      
-      // Supabase a veces no devuelve error pero el status indica si fue exitoso (204 es OK)
-      console.log("Status de eliminación:", status);
       
       toast.success(`${targetType === 'player' ? 'Jugador' : targetType === 'team' ? 'Equipo' : 'Partido'} eliminado con éxito`);
       
-      // Forzar actualización inmediata del estado local antes de re-fetch
+      // Actualización local
       if (targetType === 'player') setPlayers(prev => prev.filter(p => p.id !== targetId));
       if (targetType === 'team') setTeams(prev => prev.filter(t => t.id !== targetId));
       if (targetType === 'match') setMatches(prev => prev.filter(m => m.id !== targetId));
@@ -163,8 +170,10 @@ export default function AdminPage() {
       await fetchData();
     } catch (error: any) {
       console.error("Error completo en eliminación:", error);
-      const msg = error.message || 'Error desconocido';
-      toast.error(`No se pudo eliminar: ${msg}`);
+      toast.error(`No se pudo eliminar: ${error.message}`);
+      if (error.message.includes("denegó")) {
+        toast.info("Prueba cerrando sesión y volviendo a entrar.");
+      }
     } finally {
       setDeletingId(null);
       setDeleteTarget(null);
@@ -199,6 +208,13 @@ export default function AdminPage() {
           <h1 className="font-anybody text-xl font-bold tracking-wider uppercase text-[#e9c176]">ELITE ADMIN</h1>
         </div>
         <div className="flex items-center gap-4">
+          <button 
+            onClick={() => fetchData()}
+            className="text-[#c5c6cd] hover:text-[#e9c176] transition-colors p-2"
+            title="Refrescar Datos"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
           <button 
             onClick={() => router.push('/')}
             className="text-[#c5c6cd] hover:text-[#e9c176] transition-colors flex items-center gap-2 text-xs font-bold uppercase"
@@ -242,7 +258,7 @@ export default function AdminPage() {
           </div>
         </section>
 
-        {/* Quick Actions (Promoted to top) */}
+        {/* Quick Actions */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
           <Button 
             className="bg-gradient-to-r from-[#e9c176] to-[#ffdea5] hover:scale-[1.02] transition-transform text-[#412d00] font-anybody font-black uppercase italic tracking-tighter h-16 rounded-xl shadow-xl shadow-[#e9c176]/10 gap-3" 
@@ -396,16 +412,19 @@ export default function AdminPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <input 
-                      type="number" 
-                      className="w-14 h-10 bg-[#0c0f10] border border-[#e9c176]/20 text-[#e9c176] text-center font-anybody font-black text-lg rounded-lg focus:outline-none focus:border-[#e9c176] transition-colors"
-                      defaultValue={player.goals}
-                      onBlur={(e) => updatePlayerGoals(player.id, parseInt(e.target.value))}
-                    />
+                    <div className="flex flex-col items-center">
+                       <span className="text-[8px] font-bold text-[#e9c176]/50 uppercase">Goles</span>
+                       <input 
+                        type="number" 
+                        className="w-14 h-10 bg-[#0c0f10] border border-[#e9c176]/20 text-[#e9c176] text-center font-anybody font-black text-lg rounded-lg focus:outline-none focus:border-[#e9c176] transition-colors"
+                        defaultValue={player.goals}
+                        onBlur={(e) => updatePlayerGoals(player.id, parseInt(e.target.value))}
+                      />
+                    </div>
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="text-red-500 hover:bg-red-500/20 hover:text-red-400 h-10 w-10 transition-colors"
+                      className="text-red-500 hover:bg-red-500/20 hover:text-red-400 h-10 w-10 transition-colors mt-4"
                       onClick={() => handleDeleteRequest(player.id, player.name, 'player')}
                       disabled={deletingId === player.id}
                       title="Eliminar Jugador"
