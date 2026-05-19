@@ -46,18 +46,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     fetchData();
-    checkSession();
   }, []);
-
-  async function checkSession() {
-    const { data: { session } } = await supabase.auth.getSession();
-    console.log("Auth Status:", session ? `Conectado como ${session.user.email}` : "No autenticado");
-    console.log("Role:", session?.user?.role || "anon");
-    
-    if (!session && window.location.pathname.includes('admin')) {
-       console.error("ALERTA: Accediendo a admin sin sesión activa en el cliente.");
-    }
-  }
 
   async function fetchData() {
     setLoading(true);
@@ -82,7 +71,6 @@ export default function AdminPage() {
       if (pData) setPlayers(pData as unknown as Player[]);
       if (tData) setTeams(tData);
     } catch (error) {
-      console.error("Error fetching data:", error);
       toast.error("Error al cargar los datos de la liga");
     } finally {
       setLoading(false);
@@ -108,7 +96,6 @@ export default function AdminPage() {
       toast.success("Marcador actualizado correctamente");
       fetchData();
     } catch (error) {
-      console.error(error);
       toast.error("Error al actualizar el marcador");
     }
   }
@@ -124,7 +111,6 @@ export default function AdminPage() {
       toast.success("Goles actualizados");
       fetchData();
     } catch (error) {
-      console.error(error);
       toast.error("Error al actualizar goles");
     }
   }
@@ -137,7 +123,7 @@ export default function AdminPage() {
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
 
-    const targetId = deleteTarget.id.trim(); // Limpieza preventiva
+    const targetId = deleteTarget.id.trim();
     const targetType = deleteTarget.type;
     
     setDeletingId(targetId);
@@ -149,38 +135,27 @@ export default function AdminPage() {
       else if (targetType === 'team') table = 'teams';
       else if (targetType === 'match') table = 'matches';
 
-      // 1. Intentamos borrar y pedir que devuelva la fila borrada
-      const { data, error, status } = await supabase
+      const { data, error } = await supabase
         .from(table)
         .delete()
         .eq('id', targetId)
         .select();
 
-      console.log(`Resultado de eliminación en ${table}:`, { targetId, status, data });
-
       if (error) throw error;
 
-      // Si data está vacío, la política de RLS bloqueó el borrado silenciosamente
       if (!data || data.length === 0) {
-        console.error("RLS BLOCK: Supabase devolvió 200/204 pero no borró nada.");
         throw new Error("Permiso denegado por la base de datos (RLS). Tu usuario está conectado pero no tiene permiso de escritura real.");
       }
       
       toast.success(`${targetType === 'player' ? 'Jugador' : targetType === 'team' ? 'Equipo' : 'Partido'} eliminado correctamente`);
       
-      // Actualización inmediata de la UI
       if (targetType === 'player') setPlayers(prev => prev.filter(p => p.id !== targetId));
       if (targetType === 'team') setTeams(prev => prev.filter(t => t.id !== targetId));
       if (targetType === 'match') setMatches(prev => prev.filter(m => m.id !== targetId));
       
-      // Recarga suave de respaldo
       await fetchData();
     } catch (error: any) {
-      console.error("Error en handleConfirmDelete:", error);
       toast.error(`No se pudo eliminar: ${error.message}`);
-      if (error.message.includes("RLS")) {
-        toast.info("Asegúrate de haber ejecutado el script SQL de permisos en el Dashboard de Supabase.", { duration: 8000 });
-      }
     } finally {
       setDeletingId(null);
       setDeleteTarget(null);
@@ -306,7 +281,7 @@ export default function AdminPage() {
                   toast.success('Enlace del banner copiado al portapapeles');
                 }
               } catch (err) {
-                console.error('Error al compartir:', err);
+                // Silently handle share errors
               }
             }}
           >

@@ -30,7 +30,6 @@ export function PlayerAddForm({ teams, onSave }: PlayerAddFormProps) {
     
     setSaving(true);
     try {
-      // Intentamos insertar
       const { error } = await supabase
         .from('players')
         .insert([{ 
@@ -39,10 +38,7 @@ export function PlayerAddForm({ teams, onSave }: PlayerAddFormProps) {
           goals: goals 
         }]);
 
-      if (error) {
-        console.error("Supabase Error:", error);
-        throw error;
-      }
+      if (error) throw error;
       
       await onSave();
       
@@ -54,14 +50,7 @@ export function PlayerAddForm({ teams, onSave }: PlayerAddFormProps) {
       
       setTimeout(() => setSuccess(false), 2000);
     } catch (error: any) {
-      console.error("Catch Error adding player:", error);
-      // Mostrar el mensaje de error real de Supabase o uno amigable
-      const msg = error.message || 'Verifica permisos o conexión';
-      toast.error(`No se pudo agregar: ${msg}`);
-      
-      if (msg.includes('row-level security')) {
-        toast.info("Tip: Prueba cerrando sesión y volviendo a entrar para refrescar tus permisos.", { duration: 5000 });
-      }
+      toast.error(`Error: ${error.message || 'Verifica permisos o conexión'}`);
     } finally {
       setSaving(false);
     }
@@ -88,7 +77,9 @@ export function PlayerAddForm({ teams, onSave }: PlayerAddFormProps) {
           <label className="text-[10px] font-bold uppercase text-[#e9c176] tracking-widest ml-1 mb-2 block">Equipo</label>
           <Select value={teamId} onValueChange={(val) => setTeamId(val || '')}>
             <SelectTrigger className="bg-[#0c0f10] border-[#e9c176]/20 h-12 text-white rounded-xl focus:ring-[#e9c176] focus:border-[#e9c176] w-full">
-              <SelectValue placeholder="Seleccionar equipo" />
+              <SelectValue placeholder="Seleccionar equipo">
+                {teamId ? teams.find(t => t.id === teamId)?.name : undefined}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="bg-[#1d2021] border-[#e9c176]/20 text-white">
               {teams.map(team => (
