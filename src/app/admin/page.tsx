@@ -37,6 +37,7 @@ export default function AdminPage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSubTab, setActiveSubTab] = useState<'matches' | 'teams' | 'players'>('matches');
+  const [matchFilter, setMatchFilter] = useState<'all' | 'pending' | 'finished'>('all');
   const [showPlayerAdd, setShowPlayerAdd] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -77,10 +78,14 @@ export default function AdminPage() {
     }
   }
 
-  async function updateScore(matchId: string, homeScore: number, awayScore: number, streamUrl?: string) {
+  async function updateScore(matchId: string, homeScore: number, awayScore: number, streamUrl?: string, statusOverride?: 'pending' | 'finished') {
     const updateData: any = { stream_url: streamUrl };
     
-    if (!isNaN(homeScore) && !isNaN(awayScore)) {
+    if (statusOverride === 'pending') {
+      updateData.home_score = null;
+      updateData.away_score = null;
+      updateData.status = 'pending';
+    } else if (!isNaN(homeScore) && !isNaN(awayScore)) {
       updateData.home_score = homeScore;
       updateData.away_score = awayScore;
       updateData.status = 'finished';
@@ -93,7 +98,7 @@ export default function AdminPage() {
         .eq('id', matchId);
 
       if (error) throw error;
-      toast.success("Marcador actualizado correctamente");
+      toast.success(statusOverride === 'pending' ? "Partido reestablecido a pendiente" : "Marcador guardado / modificado correctamente");
       fetchData();
     } catch (error) {
       toast.error("Error al actualizar el marcador");
@@ -293,43 +298,50 @@ export default function AdminPage() {
         {activeSubTab === 'matches' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in duration-500">
             <div className="lg:col-span-12 space-y-6">
-              <div className="flex items-center justify-between metallic-border-bottom pb-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between metallic-border-bottom pb-4 gap-4">
                 <h3 className="font-anybody text-lg font-bold text-[#e9c176] flex items-center gap-2 uppercase tracking-wider">
-                  <Trophy className="w-5 h-5" /> Gestión de Partidos
+                  <Trophy className="w-5 h-5" /> Gestión y Modificación de Partidos
                 </h3>
-                <div className="flex gap-2">
-                  <Badge variant="outline" className="border-[#e9c176]/30 text-[#e9c176] text-[9px] uppercase">
-                    {matches.filter(m => m.status === 'pending').length} Pendientes
-                  </Badge>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setMatchFilter('all')}
+                    className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                      matchFilter === 'all' ? 'bg-[#e9c176] text-black font-black' : 'bg-white/5 text-[#c5c6cd] hover:bg-white/10'
+                    }`}
+                  >
+                    Todos ({matches.length})
+                  </button>
+                  <button
+                    onClick={() => setMatchFilter('pending')}
+                    className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                      matchFilter === 'pending' ? 'bg-[#e9c176] text-black font-black' : 'bg-white/5 text-[#c5c6cd] hover:bg-white/10'
+                    }`}
+                  >
+                    Pendientes ({matches.filter(m => m.status === 'pending').length})
+                  </button>
+                  <button
+                    onClick={() => setMatchFilter('finished')}
+                    className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                      matchFilter === 'finished' ? 'bg-[#e9c176] text-black font-black' : 'bg-white/5 text-[#c5c6cd] hover:bg-white/10'
+                    }`}
+                  >
+                    Finalizados ({matches.filter(m => m.status === 'finished').length})
+                  </button>
                 </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {matches.filter(m => m.status === 'pending').map(match => (
-                  <MatchScoreForm 
-                    key={match.id} 
-                    match={match} 
-                    onSave={updateScore} 
-                    onDelete={async (id) => handleDeleteRequest(id, `${match.home_team?.name} vs ${match.away_team?.name}`, 'match')} 
-                  />
-                ))}
+                {matches
+                  .filter(m => matchFilter === 'all' ? true : m.status === matchFilter)
+                  .map(match => (
+                    <MatchScoreForm 
+                      key={match.id} 
+                      match={match} 
+                      onSave={updateScore} 
+                      onDelete={async (id) => handleDeleteRequest(id, `${match.home_team?.name} vs ${match.away_team?.name}`, 'match')} 
+                    />
+                  ))}
               </div>
-
-              {matches.filter(m => m.status === 'finished').length > 0 && (
-                <>
-                  <h4 className="font-anybody text-sm font-bold text-[#c5c6cd] uppercase tracking-widest pt-4">Resultados Recientes</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {matches.filter(m => m.status === 'finished').slice(-4).map(match => (
-                      <MatchScoreForm 
-                        key={match.id} 
-                        match={match} 
-                        onSave={updateScore} 
-                        onDelete={async (id) => handleDeleteRequest(id, `${match.home_team?.name} vs ${match.away_team?.name}`, 'match')} 
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
             </div>
           </div>
         )}

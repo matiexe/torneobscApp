@@ -2,6 +2,16 @@
 
 All notable changes to the **Súper Liga BSC** project will be documented in this file.
 
+## [0.3.1] - 2026-07-20
+
+### Added
+- **Match Modification in Admin:** Added full functionality in the admin panel to modify existing match scores, filter matches (All, Pending, Finished), and revert matches back to pending status.
+
+### Removed
+- **Official Fixture Image:** Removed the official fixture image card and modal viewer from the public interface as requested.
+
+---
+
 ## [0.3.0] - 2026-07-20
 
 ### Added

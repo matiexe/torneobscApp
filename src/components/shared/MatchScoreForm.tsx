@@ -10,22 +10,30 @@ import { Check, Loader2, Trash2 } from 'lucide-react';
 
 interface MatchScoreFormProps {
   match: Match;
-  onSave: (id: string, h: number, a: number, stream?: string) => Promise<void>;
+  onSave: (id: string, h: number, a: number, stream?: string, status?: 'pending' | 'finished') => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
 }
 
 export function MatchScoreForm({ match, onSave, onDelete }: MatchScoreFormProps) {
-  const [h, setH] = useState(match.home_score?.toString() || '');
-  const [a, setA] = useState(match.away_score?.toString() || '');
+  const [h, setH] = useState(match.home_score?.toString() ?? '');
+  const [a, setA] = useState(match.away_score?.toString() ?? '');
   const [stream, setStream] = useState(match.stream_url || '');
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleSave = async () => {
+  const handleSave = async (statusOverride?: 'pending' | 'finished') => {
     setSaving(true);
     try {
-      await onSave(match.id, parseInt(h), parseInt(a), stream);
+      const targetStatus = statusOverride || 'finished';
+      const homeScoreNum = targetStatus === 'pending' ? NaN : parseInt(h);
+      const awayScoreNum = targetStatus === 'pending' ? NaN : parseInt(a);
+
+      await onSave(match.id, homeScoreNum, awayScoreNum, stream, targetStatus);
+      if (targetStatus === 'pending') {
+        setH('');
+        setA('');
+      }
       setSuccess(true);
       setShowConfirm(false);
       setTimeout(() => setSuccess(false), 2000);
@@ -127,7 +135,7 @@ export function MatchScoreForm({ match, onSave, onDelete }: MatchScoreFormProps)
         <div className="flex gap-2 animate-in fade-in zoom-in-95 duration-200">
           <Button 
             className="flex-1 font-anybody font-black uppercase italic text-[10px] h-11 rounded-lg bg-[#4ade80] text-black hover:bg-[#22c55e]"
-            onClick={handleSave}
+            onClick={() => handleSave('finished')}
             disabled={saving}
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar'}
@@ -141,17 +149,32 @@ export function MatchScoreForm({ match, onSave, onDelete }: MatchScoreFormProps)
           </Button>
         </div>
       ) : (
-        <Button 
-          className={`w-full font-anybody font-black uppercase italic text-xs h-11 rounded-lg transition-all border ${
-            success 
-              ? 'bg-[#4ade80] text-black border-[#4ade80]' 
-              : 'bg-white/5 hover:bg-[#e9c176] hover:text-[#412d00] text-white border-[#e9c176]/20'
-          }`}
-          onClick={() => setShowConfirm(true)}
-          disabled={saving || h === '' || a === ''}
-        >
-          {success ? <Check className="w-4 h-4" /> : 'Guardar Marcador'}
-        </Button>
+        <div className="flex flex-col gap-2">
+          <Button 
+            className={`w-full font-anybody font-black uppercase italic text-xs h-11 rounded-lg transition-all border ${
+              success 
+                ? 'bg-[#4ade80] text-black border-[#4ade80]' 
+                : match.status === 'finished'
+                  ? 'bg-[#e9c176]/20 hover:bg-[#e9c176] hover:text-[#412d00] text-[#e9c176] border-[#e9c176]/40'
+                  : 'bg-white/5 hover:bg-[#e9c176] hover:text-[#412d00] text-white border-[#e9c176]/20'
+            }`}
+            onClick={() => setShowConfirm(true)}
+            disabled={saving || h === '' || a === ''}
+          >
+            {success ? <Check className="w-4 h-4" /> : match.status === 'finished' ? 'Modificar Resultado' : 'Guardar Marcador'}
+          </Button>
+
+          {match.status === 'finished' && (
+            <Button
+              variant="ghost"
+              className="w-full text-[10px] font-bold text-[#ffb4ab]/70 hover:text-[#ffb4ab] hover:bg-[#ffb4ab]/10 h-8 uppercase"
+              onClick={() => handleSave('pending')}
+              disabled={saving}
+            >
+              Reestablecer Partido a Pendiente
+            </Button>
+          )}
+        </div>
       )}
     </div>
   );
