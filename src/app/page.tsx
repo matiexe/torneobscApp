@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { calculateStandings, StandingEntry, Match, Team } from '@/lib/standings';
-import { Bell, Calendar, ListOrdered, Swords, Trophy, Users, RefreshCw } from 'lucide-react';
+import { Bell, Calendar, ListOrdered, Swords, Trophy, Users, RefreshCw, Image as ImageIcon, Eye, X, Download } from 'lucide-react';
 import { MatchCard } from '@/components/shared/MatchCard';
 import { StandingsTable } from '@/components/shared/StandingsTable';
 import { ScorersList } from '@/components/shared/ScorersList';
@@ -23,6 +23,7 @@ export default function Home() {
   const [standings, setStandings] = useState<StandingEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'home' | 'standings' | 'results' | 'fixture'>('home');
+  const [showFixtureModal, setShowFixtureModal] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -279,7 +280,7 @@ export default function Home() {
         {activeTab === 'fixture' && (
           <div className="animate-in fade-in duration-500">
              {/* Seasonal Header */}
-             <div className="relative w-full mb-8 overflow-hidden rounded-xl h-48 md:h-64 flex flex-col justify-end p-6 glass-panel border-none shadow-2xl">
+             <div className="relative w-full mb-6 overflow-hidden rounded-xl h-48 md:h-60 flex flex-col justify-end p-6 glass-panel border-none shadow-2xl">
                <div className="absolute inset-0 z-0">
                  <img 
                    className="w-full h-full object-cover opacity-40" 
@@ -288,16 +289,50 @@ export default function Home() {
                  />
                  <div className="absolute inset-0 bg-gradient-to-t from-[#111415] via-transparent to-transparent"></div>
                </div>
-               <div className="relative z-10">
-                 <p className="font-lexend text-[10px] font-bold text-[#e9c176] uppercase tracking-[0.3em] mb-1">Campeonato Oficial</p>
-                 <h2 className="font-anybody text-2xl md:text-5xl font-black text-[#e9c176] italic">TEMPORADA 2026</h2>
-                 <div className="h-1 w-32 bg-[#e9c176] mt-2 shadow-[0_0_10px_#e9c176]"></div>
+               <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                 <div>
+                   <p className="font-lexend text-[10px] font-bold text-[#e9c176] uppercase tracking-[0.3em] mb-1">Campeonato Oficial</p>
+                   <h2 className="font-anybody text-2xl md:text-4xl font-black text-[#e9c176] italic">SEGUNDA RONDA & ELIMINATORIAS</h2>
+                   <div className="h-1 w-32 bg-[#e9c176] mt-2 shadow-[0_0_10px_#e9c176]"></div>
+                 </div>
+                 <button
+                   onClick={() => setShowFixtureModal(true)}
+                   className="flex items-center gap-2 px-4 py-2 bg-[#604403]/40 border border-[#e9c176]/50 rounded-lg text-[#e9c176] text-xs font-bold uppercase tracking-wider hover:bg-[#e9c176] hover:text-[#111415] transition-all duration-300 active:scale-95 shadow-lg"
+                 >
+                   <ImageIcon className="w-4 h-4" /> Ver Fixture Oficial
+                 </button>
+               </div>
+             </div>
+
+             {/* Fixture Graphic Card */}
+             <div 
+               onClick={() => setShowFixtureModal(true)}
+               className="mb-8 glass-panel rounded-xl p-4 border-[#e9c176]/30 cursor-pointer hover:border-[#e9c176]/60 transition-all group relative overflow-hidden"
+             >
+               <div className="flex justify-between items-center mb-3">
+                 <div className="flex items-center gap-2">
+                   <span className="w-2 h-2 rounded-full bg-[#e9c176] animate-ping"></span>
+                   <h4 className="font-anybody text-sm font-bold text-white uppercase tracking-wider">Fixture Oficial - Segunda Ronda</h4>
+                 </div>
+                 <span className="text-[10px] text-[#e9c176] font-bold uppercase flex items-center gap-1 group-hover:underline">
+                   <Eye className="w-3.5 h-3.5" /> Ampliar Imagen
+                 </span>
+               </div>
+               <div className="relative aspect-[4/3] max-h-64 rounded-lg overflow-hidden border border-white/10 bg-black/60 flex items-center justify-center">
+                 <img 
+                   src="/segundaRonda.jpeg" 
+                   alt="Fixture Oficial Segunda Ronda" 
+                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                 />
+                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-4">
+                   <p className="text-xs text-[#c5c6cd] font-lexend">Haz clic para ver la imagen oficial completa del torneo</p>
+                 </div>
                </div>
              </div>
 
              <div className="flex items-center justify-between metallic-border-bottom pb-2 mb-6">
                <h3 className="font-anybody text-xl font-bold text-[#e9c176] uppercase tracking-wider">Calendario de Partidos</h3>
-               <span className="font-lexend text-[10px] text-[#c5c6cd] uppercase font-bold">Próximos Encuentros</span>
+               <span className="font-lexend text-[10px] text-[#c5c6cd] uppercase font-bold">Todas las Jornadas</span>
              </div>
 
              <div className="grid gap-4">
@@ -305,6 +340,40 @@ export default function Home() {
                   <MatchCard key={match.id} match={match} type="fixture" />
                 ))}
              </div>
+          </div>
+        )}
+
+        {/* Fixture Image Modal */}
+        {showFixtureModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center glass-panel border-[#e9c176]/40 p-4 rounded-2xl overflow-hidden">
+              <div className="w-full flex justify-between items-center mb-3 pb-2 border-b border-[#e9c176]/20">
+                <h3 className="font-anybody text-base md:text-lg font-bold text-[#e9c176] uppercase">Fixture Oficial - Segunda Ronda y Eliminatorias 2026</h3>
+                <div className="flex items-center gap-2">
+                  <a 
+                    href="/segundaRonda.jpeg" 
+                    download="Fixture_Segunda_Ronda_2026.jpeg"
+                    className="p-2 rounded-lg bg-[#604403]/40 border border-[#e9c176]/30 text-[#e9c176] hover:bg-[#e9c176] hover:text-black transition-colors"
+                    title="Descargar Imagen"
+                  >
+                    <Download className="w-4 h-4" />
+                  </a>
+                  <button 
+                    onClick={() => setShowFixtureModal(false)}
+                    className="p-2 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+              <div className="flex-1 w-full overflow-auto flex items-center justify-center rounded-lg bg-black/40">
+                <img 
+                  src="/segundaRonda.jpeg" 
+                  alt="Fixture Oficial Segunda Ronda y Eliminatorias" 
+                  className="max-w-full max-h-[75vh] object-contain rounded-lg shadow-2xl" 
+                />
+              </div>
+            </div>
           </div>
         )}
       </div>

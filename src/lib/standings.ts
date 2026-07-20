@@ -34,7 +34,9 @@ export interface StandingEntry {
 export function calculateStandings(teams: Team[], matches: Match[]): StandingEntry[] {
   const standingsMap: Record<string, StandingEntry> = {};
 
-  teams.forEach((team) => {
+  const regularTeams = teams.filter(t => !['1RO', '4TO', '2DO', '3ERO', 'FINALISTA 1', 'FINALISTA 2'].includes(t.name));
+
+  regularTeams.forEach((team) => {
     standingsMap[team.id] = {
       teamId: team.id,
       teamName: team.name,

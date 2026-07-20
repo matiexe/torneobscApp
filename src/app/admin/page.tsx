@@ -69,7 +69,7 @@ export default function AdminPage() {
 
       if (mData) setMatches(mData);
       if (pData) setPlayers(pData as unknown as Player[]);
-      if (tData) setTeams(tData);
+      if (tData) setTeams(tData.filter((t: any) => !['1RO', '4TO', '2DO', '3ERO', 'FINALISTA 1', 'FINALISTA 2'].includes(t.name)));
     } catch (error) {
       toast.error("Error al cargar los datos de la liga");
     } finally {

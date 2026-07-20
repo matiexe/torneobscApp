@@ -2,6 +2,15 @@
 
 All notable changes to the **Súper Liga BSC** project will be documented in this file.
 
+## [0.3.0] - 2026-07-20
+
+### Added
+- **Segunda Ronda & Eliminatorias Fixture:** Added all 10 regular second round matches and 3 playoff phase matches (1RO vs 4TO, 2DO vs 3ERO, and Final) to Supabase database.
+- **Official Fixture Image Integration:** Added official graphic asset `segundaRonda.jpeg` to the public directory and built an interactive modal viewer and download option in the Fixture tab.
+- **Standings & Admin Filtering:** Filtered playoff placeholder teams from regular league standings and admin player dropdowns.
+
+---
+
 ## [0.2.3] - 2026-05-14
 
 ### Fixed
