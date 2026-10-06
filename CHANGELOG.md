@@ -2,6 +2,16 @@
 
 All notable changes to the **Súper Liga BSC** project will be documented in this file.
 
+## [0.4.1] - 2026-10-06
+
+### Changed
+- **Ajuste Especial de Cruces de Semifinales:** Se actualizó la lógica de emparejamiento de playoffs en el panel de Admin y en toda la web pública para que los cruces de semifinales sean:
+  - **Semifinal 1:** 1º Puesto vs 3º Puesto
+  - **Semifinal 2:** 2º Puesto vs 4º Puesto
+  - **Gran Final:** Ganador SF 1 vs Ganador SF 2
+
+---
+
 ## [0.4.0] - 2026-10-06
 
 ### Added

@@ -99,39 +99,19 @@ export function AdminPlayoffManager({
       // Default date for new matches if needed (1 week from today)
       const defaultDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-      // 1. Update or create Semifinal 1 (1º vs 4º)
+      // 1. Update or create Semifinal 1 (1º vs 3º)
       if (sf1Match) {
         const { error } = await supabase
           .from('matches')
           .update({
             home_team_id: team1.id,
-            away_team_id: team4.id,
+            away_team_id: team3.id,
           })
           .eq('id', sf1Match.id);
         if (error) throw error;
       } else {
         const { error } = await supabase.from('matches').insert({
           home_team_id: team1.id,
-          away_team_id: team4.id,
-          match_date: defaultDate,
-          status: 'pending',
-        });
-        if (error) throw error;
-      }
-
-      // 2. Update or create Semifinal 2 (2º vs 3º)
-      if (sf2Match) {
-        const { error } = await supabase
-          .from('matches')
-          .update({
-            home_team_id: team2.id,
-            away_team_id: team3.id,
-          })
-          .eq('id', sf2Match.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('matches').insert({
-          home_team_id: team2.id,
           away_team_id: team3.id,
           match_date: defaultDate,
           status: 'pending',
@@ -139,8 +119,28 @@ export function AdminPlayoffManager({
         if (error) throw error;
       }
 
+      // 2. Update or create Semifinal 2 (2º vs 4º)
+      if (sf2Match) {
+        const { error } = await supabase
+          .from('matches')
+          .update({
+            home_team_id: team2.id,
+            away_team_id: team4.id,
+          })
+          .eq('id', sf2Match.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('matches').insert({
+          home_team_id: team2.id,
+          away_team_id: team4.id,
+          match_date: defaultDate,
+          status: 'pending',
+        });
+        if (error) throw error;
+      }
+
       toast.success(
-        `Cruces generados con éxito: SF1 (${team1.name} vs ${team4.name}) y SF2 (${team2.name} vs ${team3.name})`
+        `Cruces generados con éxito: SF1 (${team1.name} vs ${team3.name}) y SF2 (${team2.name} vs ${team4.name})`
       );
       await onRefresh();
     } catch (err: any) {
@@ -251,7 +251,7 @@ export function AdminPlayoffManager({
               </h3>
             </div>
             <p className="text-xs text-[#c5c6cd]">
-              Calcula y asigna automáticamente los partidos de eliminación directa en la base de datos a partir de la tabla de posiciones: <span className="text-[#e9c176] font-semibold">1º vs 4º</span> y <span className="text-[#e9c176] font-semibold">2º vs 3º</span>.
+              Calcula y asigna automáticamente los partidos de eliminación directa en la base de datos a partir de la tabla de posiciones: <span className="text-[#e9c176] font-semibold">1º vs 3º</span> y <span className="text-[#e9c176] font-semibold">2º vs 4º</span>.
             </p>
           </div>
 
@@ -290,10 +290,10 @@ export function AdminPlayoffManager({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { pos: '1º Lugar', team: top1, seed: 'Local SF 1', badge: '1º vs 4º' },
-            { pos: '2º Lugar', team: top2, seed: 'Local SF 2', badge: '2º vs 3º' },
-            { pos: '3º Lugar', team: top3, seed: 'Visitante SF 2', badge: '2º vs 3º' },
-            { pos: '4º Lugar', team: top4, seed: 'Visitante SF 1', badge: '1º vs 4º' },
+            { pos: '1º Lugar', team: top1, seed: 'Local SF 1', badge: '1º vs 3º' },
+            { pos: '2º Lugar', team: top2, seed: 'Local SF 2', badge: '2º vs 4º' },
+            { pos: '3º Lugar', team: top3, seed: 'Visitante SF 1', badge: '1º vs 3º' },
+            { pos: '4º Lugar', team: top4, seed: 'Visitante SF 2', badge: '2º vs 4º' },
           ].map((item, idx) => (
             <div
               key={idx}
@@ -356,10 +356,10 @@ export function AdminPlayoffManager({
               <div className="p-2.5 rounded-lg bg-black/40 border border-white/5 flex items-center justify-between">
                 <div>
                   <span className="text-[10px] font-bold text-[#e9c176] uppercase block">
-                    Semifinal 1 (1º vs 4º)
+                    Semifinal 1 (1º vs 3º)
                   </span>
                   <span className="font-anybody font-bold text-white uppercase">
-                    {top1?.teamName || '1º'} vs {top4?.teamName || '4º'}
+                    {top1?.teamName || '1º'} vs {top3?.teamName || '3º'}
                   </span>
                 </div>
                 <Badge variant="outline" className="text-[8px] border-white/10 text-[#c5c6cd]">
@@ -370,10 +370,10 @@ export function AdminPlayoffManager({
               <div className="p-2.5 rounded-lg bg-black/40 border border-white/5 flex items-center justify-between">
                 <div>
                   <span className="text-[10px] font-bold text-[#e9c176] uppercase block">
-                    Semifinal 2 (2º vs 3º)
+                    Semifinal 2 (2º vs 4º)
                   </span>
                   <span className="font-anybody font-bold text-white uppercase">
-                    {top2?.teamName || '2º'} vs {top3?.teamName || '3º'}
+                    {top2?.teamName || '2º'} vs {top4?.teamName || '4º'}
                   </span>
                 </div>
                 <Badge variant="outline" className="text-[8px] border-white/10 text-[#c5c6cd]">

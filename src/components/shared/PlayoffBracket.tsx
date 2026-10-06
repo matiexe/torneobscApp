@@ -197,7 +197,7 @@ export function PlayoffBracket({
             <h4 className="font-anybody text-sm font-bold text-[#e9c176] uppercase tracking-wider flex items-center gap-2">
               <Swords className="w-4 h-4" /> Semifinales
             </h4>
-            <span className="text-[10px] text-[#c5c6cd]">1º vs 4º & 2º vs 3º</span>
+            <span className="text-[10px] text-[#c5c6cd]">1º vs 3º & 2º vs 4º</span>
           </div>
 
           <div className="space-y-4">
@@ -233,10 +233,10 @@ export function PlayoffBracket({
               Formato de Definición:
             </p>
             <p>
-              • Semifinal 1: <strong>1º Puesto</strong> vs <strong>4º Puesto</strong>
+              • Semifinal 1: <strong>1º Puesto</strong> vs <strong>3º Puesto</strong>
             </p>
             <p>
-              • Semifinal 2: <strong>2º Puesto</strong> vs <strong>3º Puesto</strong>
+              • Semifinal 2: <strong>2º Puesto</strong> vs <strong>4º Puesto</strong>
             </p>
             <p>
               • Gran Final: <strong>Ganador SF 1</strong> vs <strong>Ganador SF 2</strong>

@@ -232,7 +232,7 @@ export default function Home() {
                       <div className="p-2.5 rounded-lg bg-black/60 border border-[#e9c176]/20">
                         <div className="flex justify-between items-center text-[9px] text-[#e9c176] font-bold uppercase mb-1">
                           <span>Semifinal 1</span>
-                          <span>1º vs 4º</span>
+                          <span>1º vs 3º</span>
                         </div>
                         <div className="font-anybody font-bold text-white flex justify-between items-center text-[11px]">
                           <span className="truncate max-w-[85px]">{playoffBracket.semifinal1.homeTeamName}</span>
@@ -244,7 +244,7 @@ export default function Home() {
                       <div className="p-2.5 rounded-lg bg-black/60 border border-[#e9c176]/20">
                         <div className="flex justify-between items-center text-[9px] text-[#e9c176] font-bold uppercase mb-1">
                           <span>Semifinal 2</span>
-                          <span>2º vs 3º</span>
+                          <span>2º vs 4º</span>
                         </div>
                         <div className="font-anybody font-bold text-white flex justify-between items-center text-[11px]">
                           <span className="truncate max-w-[85px]">{playoffBracket.semifinal2.homeTeamName}</span>
@@ -314,7 +314,7 @@ export default function Home() {
                 Cuadro de Playoffs
               </h2>
               <p className="text-[#c5c6cd] text-xs md:text-sm max-w-xl mx-auto font-inter">
-                Cruces de eliminación directa definidos por la tabla de posiciones: <strong className="text-white">1º vs 4º</strong> y <strong className="text-white">2º vs 3º</strong>. Los ganadores disputan la Gran Final.
+                Cruces de eliminación directa definidos por la tabla de posiciones: <strong className="text-white">1º vs 3º</strong> y <strong className="text-white">2º vs 4º</strong>. Los ganadores disputan la Gran Final.
               </p>
             </div>
 
@@ -372,7 +372,7 @@ export default function Home() {
                  <h3 className="font-anybody text-xl font-bold text-[#e9c176] uppercase tracking-wider flex items-center gap-2">
                    <Trophy className="w-5 h-5 text-[#e9c176]" /> Cuadro de Eliminatorias
                  </h3>
-                 <span className="font-lexend text-[10px] text-[#e9c176] uppercase font-bold">1º vs 4º • 2º vs 3º</span>
+                 <span className="font-lexend text-[10px] text-[#e9c176] uppercase font-bold">1º vs 3º • 2º vs 4º</span>
                </div>
                <PlayoffBracket bracket={playoffBracket} />
              </div>

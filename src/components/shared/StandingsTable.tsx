@@ -67,7 +67,7 @@ export function StandingsTable({ standings }: StandingsTableProps) {
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-sm bg-[#e9c176] shrink-0" />
           <span className="text-[#c5c6cd]">
-            <strong className="text-white">1º al 4º:</strong> Clasifican a Semifinales (1º vs 4º | 2º vs 3º)
+            <strong className="text-white">1º al 4º:</strong> Clasifican a Semifinales (1º vs 3º | 2º vs 4º)
           </span>
         </div>
         <span className="text-[#c5c6cd]/60">5º Puesto: Eliminado</span>

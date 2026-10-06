@@ -83,15 +83,21 @@ export function detectPlayoffMatches(
     );
   };
 
-  // 1. Detect Semifinal 1 (1RO vs 4TO)
-  let sf1Match = matches.find((m) => hasTeams(m, '1RO', '4TO'));
+  // 1. Detect Semifinal 1 (1RO vs 3ERO, or legacy placeholder)
+  let sf1Match = matches.find((m) => hasTeams(m, '1RO', '3ERO') || hasTeams(m, '1RO', '4TO'));
+  if (!sf1Match && top1 && top3) {
+    // If already generated with actual teams, find match between top 1 and top 3
+    sf1Match = matches.find((m) => hasTeamIds(m, top1.teamId, top3.teamId));
+  }
   if (!sf1Match && top1 && top4) {
-    // If already generated with actual teams, find match between top 1 and top 4
     sf1Match = matches.find((m) => hasTeamIds(m, top1.teamId, top4.teamId));
   }
 
-  // 2. Detect Semifinal 2 (2DO vs 3ERO)
-  let sf2Match = matches.find((m) => hasTeams(m, '2DO', '3ERO'));
+  // 2. Detect Semifinal 2 (2DO vs 4TO, or legacy placeholder)
+  let sf2Match = matches.find((m) => hasTeams(m, '2DO', '4TO') || hasTeams(m, '2DO', '3ERO'));
+  if (!sf2Match && top2 && top4) {
+    sf2Match = matches.find((m) => hasTeamIds(m, top2.teamId, top4.teamId));
+  }
   if (!sf2Match && top2 && top3) {
     sf2Match = matches.find((m) => hasTeamIds(m, top2.teamId, top3.teamId));
   }
@@ -147,7 +153,7 @@ export function calculatePlayoffBracket(
     return { winnerId: null, winnerName: null, isTie: true };
   };
 
-  // Semifinal 1
+  // Semifinal 1 (1º vs 3º)
   const sf1Winner = resolveWinner(sf1Match);
   const sf1IsConfirmed = Boolean(
     sf1Match &&
@@ -160,29 +166,29 @@ export function calculatePlayoffBracket(
     stage: 'semifinal_1',
     title: 'Semifinal 1',
     seedHomeLabel: '1º Clasificado',
-    seedAwayLabel: '4º Clasificado',
+    seedAwayLabel: '3º Clasificado',
     homeTeamName: sf1IsConfirmed
       ? sf1Match?.home_team?.name || '1RO'
       : top1?.teamName || '1º Puesto',
     awayTeamName: sf1IsConfirmed
-      ? sf1Match?.away_team?.name || '4TO'
-      : top4?.teamName || '4º Puesto',
+      ? sf1Match?.away_team?.name || '3ERO'
+      : top3?.teamName || '3º Puesto',
     homeTeamId: sf1IsConfirmed ? sf1Match?.home_team_id : top1?.teamId,
-    awayTeamId: sf1IsConfirmed ? sf1Match?.away_team_id : top4?.teamId,
+    awayTeamId: sf1IsConfirmed ? sf1Match?.away_team_id : top3?.teamId,
     homeScore: sf1Match?.home_score ?? null,
     awayScore: sf1Match?.away_score ?? null,
     status: sf1Match?.status || 'pending',
     matchDate: sf1Match?.match_date,
     streamUrl: sf1Match?.stream_url,
     isConfirmed: sf1IsConfirmed,
-    isProjected: !sf1IsConfirmed && Boolean(top1 && top4),
+    isProjected: !sf1IsConfirmed && Boolean(top1 && top3),
     winnerTeamId: sf1Winner.winnerId,
     winnerTeamName: sf1Winner.winnerName,
     isTie: sf1Winner.isTie,
     match: sf1Match,
   };
 
-  // Semifinal 2
+  // Semifinal 2 (2º vs 4º)
   const sf2Winner = resolveWinner(sf2Match);
   const sf2IsConfirmed = Boolean(
     sf2Match &&
@@ -195,22 +201,22 @@ export function calculatePlayoffBracket(
     stage: 'semifinal_2',
     title: 'Semifinal 2',
     seedHomeLabel: '2º Clasificado',
-    seedAwayLabel: '3º Clasificado',
+    seedAwayLabel: '4º Clasificado',
     homeTeamName: sf2IsConfirmed
       ? sf2Match?.home_team?.name || '2DO'
       : top2?.teamName || '2º Puesto',
     awayTeamName: sf2IsConfirmed
-      ? sf2Match?.away_team?.name || '3ERO'
-      : top3?.teamName || '3º Puesto',
+      ? sf2Match?.away_team?.name || '4TO'
+      : top4?.teamName || '4º Puesto',
     homeTeamId: sf2IsConfirmed ? sf2Match?.home_team_id : top2?.teamId,
-    awayTeamId: sf2IsConfirmed ? sf2Match?.away_team_id : top3?.teamId,
+    awayTeamId: sf2IsConfirmed ? sf2Match?.away_team_id : top4?.teamId,
     homeScore: sf2Match?.home_score ?? null,
     awayScore: sf2Match?.away_score ?? null,
     status: sf2Match?.status || 'pending',
     matchDate: sf2Match?.match_date,
     streamUrl: sf2Match?.stream_url,
     isConfirmed: sf2IsConfirmed,
-    isProjected: !sf2IsConfirmed && Boolean(top2 && top3),
+    isProjected: !sf2IsConfirmed && Boolean(top2 && top4),
     winnerTeamId: sf2Winner.winnerId,
     winnerTeamName: sf2Winner.winnerName,
     isTie: sf2Winner.isTie,

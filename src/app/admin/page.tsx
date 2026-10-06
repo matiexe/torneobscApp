@@ -269,7 +269,7 @@ export default function AdminPage() {
             onClick={() => setActiveSubTab('playoffs')}
           >
             <Trophy className="w-5 h-5 text-[#e9c176]" />
-            Cruces Semifinales (1º vs 4º)
+            Cruces Semifinales (1º vs 3º)
           </Button>
           <Button 
             className="bg-gradient-to-r from-[#e9c176] to-[#ffdea5] hover:scale-[1.02] transition-transform text-[#412d00] font-anybody font-black uppercase italic tracking-tighter h-16 rounded-xl shadow-xl shadow-[#e9c176]/10 gap-3" 
