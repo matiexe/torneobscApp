@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { calculateStandings, StandingEntry, Match, Team } from '@/lib/standings';
-import { Bell, Calendar, ListOrdered, Swords, Trophy, Users, RefreshCw } from 'lucide-react';
+import { calculatePlayoffBracket } from '@/lib/playoffs';
+import { Bell, Calendar, ListOrdered, Swords, Trophy, Users, RefreshCw, Home as HomeIcon } from 'lucide-react';
 import { MatchCard } from '@/components/shared/MatchCard';
 import { StandingsTable } from '@/components/shared/StandingsTable';
 import { ScorersList } from '@/components/shared/ScorersList';
 import { TeamFormList } from '@/components/shared/TeamFormList';
+import { PlayoffBracket } from '@/components/shared/PlayoffBracket';
 
 interface Player {
   id: string;
@@ -22,7 +24,7 @@ export default function Home() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [standings, setStandings] = useState<StandingEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'home' | 'standings' | 'results' | 'fixture'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'standings' | 'playoffs' | 'results' | 'fixture'>('home');
 
   useEffect(() => {
     async function fetchData() {
@@ -56,6 +58,7 @@ export default function Home() {
   const nextMatch = matches.find(m => m.status === 'pending');
   const recentResults = matches.filter(m => m.status === 'finished').slice(-2).reverse();
   const upcomingMatches = matches.filter(m => m.status === 'pending').slice(1, 5);
+  const playoffBracket = calculatePlayoffBracket(standings, matches);
 
   const getTeamLogo = (teamName: string | undefined) => {
     if (!teamName) return null;
@@ -212,6 +215,52 @@ export default function Home() {
                 </div>
 
                 <div className="lg:col-span-4 space-y-6">
+                  {/* Playoff Matchups Preview Card */}
+                  <div className="glass-panel rounded-xl overflow-hidden p-6 border-[#e9c176]/30 bg-black/40">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <span className="font-lexend text-[9px] font-bold text-[#e9c176] uppercase tracking-widest block">
+                          Fase Final
+                        </span>
+                        <h4 className="font-anybody text-lg font-bold text-white uppercase italic">
+                          Cruces Playoffs
+                        </h4>
+                      </div>
+                      <Trophy className="w-5 h-5 text-[#e9c176]" />
+                    </div>
+                    <div className="space-y-2.5 text-xs">
+                      <div className="p-2.5 rounded-lg bg-black/60 border border-[#e9c176]/20">
+                        <div className="flex justify-between items-center text-[9px] text-[#e9c176] font-bold uppercase mb-1">
+                          <span>Semifinal 1</span>
+                          <span>1º vs 4º</span>
+                        </div>
+                        <div className="font-anybody font-bold text-white flex justify-between items-center text-[11px]">
+                          <span className="truncate max-w-[85px]">{playoffBracket.semifinal1.homeTeamName}</span>
+                          <span className="text-[#e9c176] text-[9px] font-black italic px-1">VS</span>
+                          <span className="truncate max-w-[85px] text-right">{playoffBracket.semifinal1.awayTeamName}</span>
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-black/60 border border-[#e9c176]/20">
+                        <div className="flex justify-between items-center text-[9px] text-[#e9c176] font-bold uppercase mb-1">
+                          <span>Semifinal 2</span>
+                          <span>2º vs 3º</span>
+                        </div>
+                        <div className="font-anybody font-bold text-white flex justify-between items-center text-[11px]">
+                          <span className="truncate max-w-[85px]">{playoffBracket.semifinal2.homeTeamName}</span>
+                          <span className="text-[#e9c176] text-[9px] font-black italic px-1">VS</span>
+                          <span className="truncate max-w-[85px] text-right">{playoffBracket.semifinal2.awayTeamName}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setActiveTab('playoffs')}
+                      className="mt-4 w-full py-2 bg-[#e9c176] hover:bg-[#ffdea5] text-black rounded-lg text-[10px] font-black uppercase tracking-wider transition-all shadow-md shadow-[#e9c176]/10"
+                    >
+                      Ver Cuadro de Eliminatorias
+                    </button>
+                  </div>
+
                   {/* Top 5 Scorers Card */}
                   <div className="glass-panel rounded-xl overflow-hidden p-6 border-[#e9c176]/20">
                     <div className="flex items-center justify-between mb-6">
@@ -253,6 +302,26 @@ export default function Home() {
           </div>
         )}
 
+        {activeTab === 'playoffs' && (
+          <div className="animate-in fade-in duration-500 max-w-5xl mx-auto space-y-8">
+            <div className="relative overflow-hidden rounded-xl metallic-border p-8 text-center bg-[#191c1d] border-b-2 border-[#e9c176]">
+              <div className="inline-block px-4 py-1 rounded-full bg-[#e9c176]/10 border border-[#e9c176]/20 mb-3">
+                <span className="font-lexend text-[10px] font-bold text-[#e9c176] uppercase tracking-widest">
+                  Fase Eliminatoria 2026
+                </span>
+              </div>
+              <h2 className="font-anybody text-3xl md:text-5xl font-black gold-gradient-text uppercase mb-2 italic">
+                Cuadro de Playoffs
+              </h2>
+              <p className="text-[#c5c6cd] text-xs md:text-sm max-w-xl mx-auto font-inter">
+                Cruces de eliminación directa definidos por la tabla de posiciones: <strong className="text-white">1º vs 4º</strong> y <strong className="text-white">2º vs 3º</strong>. Los ganadores disputan la Gran Final.
+              </p>
+            </div>
+
+            <PlayoffBracket bracket={playoffBracket} />
+          </div>
+        )}
+
         {activeTab === 'results' && (
           <div className="animate-in slide-in-from-bottom duration-500 max-w-4xl mx-auto">
              <div className="mb-8 relative overflow-hidden rounded-xl metallic-border p-8 text-center bg-[#191c1d] border-b-2 border-[#e9c176]">
@@ -277,9 +346,9 @@ export default function Home() {
         )}
 
         {activeTab === 'fixture' && (
-          <div className="animate-in fade-in duration-500">
+          <div className="animate-in fade-in duration-500 space-y-8">
              {/* Seasonal Header */}
-             <div className="relative w-full mb-6 overflow-hidden rounded-xl h-48 md:h-60 flex flex-col justify-end p-6 glass-panel border-none shadow-2xl">
+             <div className="relative w-full overflow-hidden rounded-xl h-48 md:h-60 flex flex-col justify-end p-6 glass-panel border-none shadow-2xl">
                <div className="absolute inset-0 z-0">
                  <img 
                    className="w-full h-full object-cover opacity-40" 
@@ -297,15 +366,31 @@ export default function Home() {
                </div>
              </div>
 
-             <div className="flex items-center justify-between metallic-border-bottom pb-2 mb-6">
-               <h3 className="font-anybody text-xl font-bold text-[#e9c176] uppercase tracking-wider">Calendario de Partidos</h3>
-               <span className="font-lexend text-[10px] text-[#c5c6cd] uppercase font-bold">Todas las Jornadas</span>
+             {/* Playoff Bracket Highlight in Fixture */}
+             <div className="space-y-4">
+               <div className="flex items-center justify-between metallic-border-bottom pb-2">
+                 <h3 className="font-anybody text-xl font-bold text-[#e9c176] uppercase tracking-wider flex items-center gap-2">
+                   <Trophy className="w-5 h-5 text-[#e9c176]" /> Cuadro de Eliminatorias
+                 </h3>
+                 <span className="font-lexend text-[10px] text-[#e9c176] uppercase font-bold">1º vs 4º • 2º vs 3º</span>
+               </div>
+               <PlayoffBracket bracket={playoffBracket} />
              </div>
 
-             <div className="grid gap-4">
-                {matches.map(match => (
-                  <MatchCard key={match.id} match={match} type="fixture" />
-                ))}
+             {/* All Matches Calendar */}
+             <div className="space-y-4 pt-4 border-t border-[#e9c176]/10">
+               <div className="flex items-center justify-between metallic-border-bottom pb-2">
+                 <h3 className="font-anybody text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                   <Calendar className="w-5 h-5 text-[#e9c176]" /> Calendario Completo de Partidos
+                 </h3>
+                 <span className="font-lexend text-[10px] text-[#c5c6cd] uppercase font-bold">Todas las Jornadas</span>
+               </div>
+
+               <div className="grid gap-4">
+                  {matches.map(match => (
+                    <MatchCard key={match.id} match={match} type="fixture" />
+                  ))}
+               </div>
              </div>
           </div>
         )}
@@ -314,20 +399,21 @@ export default function Home() {
       {/* BottomNavBar */}
       <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-3 bg-[#1d2021]/90 backdrop-blur-xl rounded-t-xl border-t border-[#e9c176]/20 shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
         {[
-          { id: 'home', label: 'Inicio', icon: Trophy },
+          { id: 'home', label: 'Inicio', icon: HomeIcon },
           { id: 'standings', label: 'Tabla', icon: ListOrdered },
+          { id: 'playoffs', label: 'Playoffs', icon: Trophy },
           { id: 'results', label: 'Resultados', icon: Swords },
           { id: 'fixture', label: 'Fixture', icon: Calendar },
         ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`flex flex-col items-center justify-center px-4 py-1 rounded-xl transition-all duration-300 active:scale-90 ${
+            className={`flex flex-col items-center justify-center px-3 py-1 rounded-xl transition-all duration-300 active:scale-90 ${
               activeTab === tab.id ? 'text-[#e9c176] bg-[#604403]/20 scale-105 shadow-inner' : 'text-[#c5c6cd] opacity-50 hover:opacity-100'
             }`}
           >
-            <tab.icon className="w-5 h-5 mb-1" />
-            <span className="font-lexend text-[10px] font-bold uppercase tracking-tighter">{tab.label}</span>
+            <tab.icon className="w-4 h-4 md:w-5 md:h-5 mb-1" />
+            <span className="font-lexend text-[9px] md:text-[10px] font-bold uppercase tracking-tighter">{tab.label}</span>
           </button>
         ))}
       </nav>

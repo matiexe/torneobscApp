@@ -2,6 +2,17 @@
 
 All notable changes to the **Súper Liga BSC** project will be documented in this file.
 
+## [0.4.0] - 2026-10-06
+
+### Added
+- **Generador de Cruces de Playoffs en Admin:** Nueva pestaña y panel de administración (`AdminPlayoffManager`) para calcular y asignar automáticamente en Supabase los cruces de semifinales (**1º vs 4º** y **2º vs 3º**) basándose en la tabla de posiciones en tiempo real.
+- **Definición de la Gran Final:** Soporte para asignar automáticamente a los finalistas (**Ganador SF1 vs Ganador SF2**) una vez concluidas las semifinales, incluyendo selector de desempate en caso de igualdad en el tiempo reglamentario.
+- **Cuadro Visual de Playoffs (Bracket):** Nuevo componente visual interactivo `PlayoffBracket` en la web pública (pestaña dedicada en la barra de navegación y destacado dentro del Fixture) que exhibe las semifinales, la Gran Final y el banner dorado de Campeón cuando concluye el torneo.
+- **Zona de Clasificación en Tabla de Posiciones:** Resaltado visual en la tabla para los puestos 1º a 4º que acceden a semifinales, junto con tarjeta resumen de cruces en la barra lateral.
+- **Protección de Assets y Conexión:** Manejo de nombres comodín (1RO, 4TO, etc.) sin generar errores 404 de imágenes y soporte para builds resilientes.
+
+---
+
 ## [0.3.1] - 2026-07-20
 
 ### Added

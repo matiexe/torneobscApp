@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Match, Team } from '@/lib/standings';
+import { Match, Team, calculateStandings, StandingEntry } from '@/lib/standings';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Shield, Settings, Trophy, Image as ImageIcon, Users, Plus, LogOut, LayoutDashboard, Flag, Share2, Trash2, Loader2, RefreshCw } from 'lucide-react';
 import { MatchScoreForm } from '@/components/shared/MatchScoreForm';
 import { TeamEditForm } from '@/components/shared/TeamEditForm';
 import { PlayerAddForm } from '@/components/shared/PlayerAddForm';
+import { AdminPlayoffManager } from '@/components/shared/AdminPlayoffManager';
 import { useRouter } from 'next/navigation';
 import { getTeamLogo } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -35,8 +36,10 @@ export default function AdminPage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [allTeams, setAllTeams] = useState<Team[]>([]);
+  const [standings, setStandings] = useState<StandingEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeSubTab, setActiveSubTab] = useState<'matches' | 'teams' | 'players'>('matches');
+  const [activeSubTab, setActiveSubTab] = useState<'matches' | 'playoffs' | 'teams' | 'players'>('matches');
   const [matchFilter, setMatchFilter] = useState<'all' | 'pending' | 'finished'>('all');
   const [showPlayerAdd, setShowPlayerAdd] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -70,7 +73,14 @@ export default function AdminPage() {
 
       if (mData) setMatches(mData);
       if (pData) setPlayers(pData as unknown as Player[]);
-      if (tData) setTeams(tData.filter((t: any) => !['1RO', '4TO', '2DO', '3ERO', 'FINALISTA 1', 'FINALISTA 2'].includes(t.name)));
+      if (tData) {
+        setAllTeams(tData);
+        const regular = tData.filter((t: any) => !['1RO', '4TO', '2DO', '3ERO', 'FINALISTA 1', 'FINALISTA 2'].includes(t.name));
+        setTeams(regular);
+        if (mData) {
+          setStandings(calculateStandings(regular, mData));
+        }
+      }
     } catch (error) {
       toast.error("Error al cargar los datos de la liga");
     } finally {
@@ -223,12 +233,19 @@ export default function AdminPage() {
         {/* Welcome Section */}
         <section className="mb-8 relative overflow-hidden rounded-xl metallic-border p-8 text-center bg-[#191c1d]/50 backdrop-blur-md border-b-2 border-[#e9c176]">
           <h2 className="font-anybody text-4xl font-black gold-gradient-text uppercase mb-2 italic">Panel de Control</h2>
-          <div className="flex justify-center gap-4 mt-4">
+          <div className="flex flex-wrap justify-center gap-3 mt-4">
             <button 
               onClick={() => setActiveSubTab('matches')}
               className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeSubTab === 'matches' ? 'bg-[#e9c176] text-black' : 'bg-white/5 text-[#c5c6cd]'}`}
             >
               Partidos
+            </button>
+            <button 
+              onClick={() => setActiveSubTab('playoffs')}
+              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 ${activeSubTab === 'playoffs' ? 'bg-[#e9c176] text-black' : 'bg-white/5 text-[#c5c6cd]'}`}
+            >
+              <Trophy className="w-3.5 h-3.5" />
+              Cruces / Playoffs
             </button>
             <button 
               onClick={() => setActiveSubTab('teams')}
@@ -246,7 +263,14 @@ export default function AdminPage() {
         </section>
 
         {/* Quick Actions */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+          <Button 
+            className="bg-gradient-to-r from-[#604403]/80 to-[#e9c176]/30 border border-[#e9c176]/40 hover:scale-[1.02] transition-transform text-[#e9c176] font-anybody font-black uppercase italic tracking-tighter h-16 rounded-xl shadow-xl gap-3"
+            onClick={() => setActiveSubTab('playoffs')}
+          >
+            <Trophy className="w-5 h-5 text-[#e9c176]" />
+            Cruces Semifinales (1º vs 4º)
+          </Button>
           <Button 
             className="bg-gradient-to-r from-[#e9c176] to-[#ffdea5] hover:scale-[1.02] transition-transform text-[#412d00] font-anybody font-black uppercase italic tracking-tighter h-16 rounded-xl shadow-xl shadow-[#e9c176]/10 gap-3" 
             onClick={() => {
@@ -344,6 +368,16 @@ export default function AdminPage() {
               </div>
             </div>
           </div>
+        )}
+
+        {activeSubTab === 'playoffs' && (
+          <AdminPlayoffManager
+            standings={standings}
+            teams={teams}
+            matches={matches}
+            allTeams={allTeams}
+            onRefresh={fetchData}
+          />
         )}
 
         {activeSubTab === 'teams' && (
