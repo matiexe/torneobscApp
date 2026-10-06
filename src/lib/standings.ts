@@ -31,7 +31,11 @@ export interface StandingEntry {
   form: string[]; // ['W', 'L', 'D', 'W', 'W']
 }
 
-export function calculateStandings(teams: Team[], matches: Match[]): StandingEntry[] {
+export function calculateStandings(
+  teams: Team[],
+  matches: Match[],
+  playoffMatchIds?: string[]
+): StandingEntry[] {
   const standingsMap: Record<string, StandingEntry> = {};
 
   const regularTeams = teams.filter(t => !['1RO', '4TO', '2DO', '3ERO', 'FINALISTA 1', 'FINALISTA 2'].includes(t.name));
@@ -52,6 +56,9 @@ export function calculateStandings(teams: Team[], matches: Match[]): StandingEnt
     };
   });
 
+  // Track matchups between pairs to only count regular season matches (at most 1 per pair in single round-robin)
+  const playedPairs = new Set<string>();
+
   // Sort matches by date to calculate form correctly
   const sortedMatches = [...matches].sort((a, b) => 
     new Date(a.match_date).getTime() - new Date(b.match_date).getTime()
@@ -59,11 +66,20 @@ export function calculateStandings(teams: Team[], matches: Match[]): StandingEnt
 
   sortedMatches.forEach((match) => {
     if (match.status !== 'finished' || match.home_score === null || match.away_score === null) return;
+    if (playoffMatchIds && playoffMatchIds.includes(match.id)) return;
 
     const home = standingsMap[match.home_team_id];
     const away = standingsMap[match.away_team_id];
 
     if (!home || !away) return;
+
+    // In a single round-robin tournament, each team plays each other at most once.
+    // Any second match between the same two teams is a playoff match and must not affect regular standings.
+    const pairKey = [match.home_team_id, match.away_team_id].sort().join(':');
+    if (playedPairs.has(pairKey)) {
+      return;
+    }
+    playedPairs.add(pairKey);
 
     home.played++;
     away.played++;

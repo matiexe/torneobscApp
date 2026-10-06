@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Match, Team, calculateStandings, StandingEntry } from '@/lib/standings';
+import { detectPlayoffMatches } from '@/lib/playoffs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Shield, Settings, Trophy, Image as ImageIcon, Users, Plus, LogOut, LayoutDashboard, Flag, Share2, Trash2, Loader2, RefreshCw } from 'lucide-react';
@@ -40,13 +41,16 @@ export default function AdminPage() {
   const [standings, setStandings] = useState<StandingEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSubTab, setActiveSubTab] = useState<'matches' | 'playoffs' | 'teams' | 'players'>('matches');
-  const [matchFilter, setMatchFilter] = useState<'all' | 'pending' | 'finished'>('all');
+  const [matchFilter, setMatchFilter] = useState<'all' | 'pending' | 'finished' | 'playoffs'>('all');
   const [showPlayerAdd, setShowPlayerAdd] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string, name: string, type: 'player' | 'team' | 'match' } | null>(null);
   
   const router = useRouter();
+
+  const { sf1Match, sf2Match, finalMatch } = detectPlayoffMatches(matches, standings);
+  const playoffMatchIds = [sf1Match?.id, sf2Match?.id, finalMatch?.id].filter(Boolean) as string[];
 
   useEffect(() => {
     fetchData();
@@ -336,6 +340,15 @@ export default function AdminPage() {
                     Todos ({matches.length})
                   </button>
                   <button
+                    onClick={() => setMatchFilter('playoffs')}
+                    className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 ${
+                      matchFilter === 'playoffs' ? 'bg-[#e9c176] text-black font-black' : 'bg-[#e9c176]/10 text-[#e9c176] hover:bg-[#e9c176]/20'
+                    }`}
+                  >
+                    <Trophy className="w-3 h-3" />
+                    Playoffs ({playoffMatchIds.length})
+                  </button>
+                  <button
                     onClick={() => setMatchFilter('pending')}
                     className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-all ${
                       matchFilter === 'pending' ? 'bg-[#e9c176] text-black font-black' : 'bg-white/5 text-[#c5c6cd] hover:bg-white/10'
@@ -356,15 +369,33 @@ export default function AdminPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {matches
-                  .filter(m => matchFilter === 'all' ? true : m.status === matchFilter)
-                  .map(match => (
-                    <MatchScoreForm 
-                      key={match.id} 
-                      match={match} 
-                      onSave={updateScore} 
-                      onDelete={async (id) => handleDeleteRequest(id, `${match.home_team?.name} vs ${match.away_team?.name}`, 'match')} 
-                    />
-                  ))}
+                  .filter(m => {
+                    if (matchFilter === 'all') return true;
+                    if (matchFilter === 'playoffs') return playoffMatchIds.includes(m.id);
+                    return m.status === matchFilter;
+                  })
+                  .map(match => {
+                    const isSf1 = match.id === sf1Match?.id;
+                    const isSf2 = match.id === sf2Match?.id;
+                    const isFinal = match.id === finalMatch?.id;
+                    const playoffLabel = isSf1
+                      ? 'Semifinal 1 (1º vs 3º)'
+                      : isSf2
+                      ? 'Semifinal 2 (2º vs 4º)'
+                      : isFinal
+                      ? 'Gran Final'
+                      : null;
+
+                    return (
+                      <MatchScoreForm 
+                        key={match.id} 
+                        match={match} 
+                        playoffLabel={playoffLabel}
+                        onSave={updateScore} 
+                        onDelete={async (id) => handleDeleteRequest(id, `${match.home_team?.name} vs ${match.away_team?.name}`, 'match')} 
+                      />
+                    );
+                  })}
               </div>
             </div>
           </div>

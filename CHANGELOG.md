@@ -2,6 +2,16 @@
 
 All notable changes to the **Súper Liga BSC** project will be documented in this file.
 
+## [0.4.2] - 2026-10-06
+
+### Fixed
+- **Marcadores Fantasma en Semifinales:** Se corrigió el algoritmo de detección para que nunca asigne por error partidos finalizados de la fase regular como partidos de playoffs. Los partidos de playoffs pendientes ahora muestran estrictamente marcador vacío (`-` vs `-`) y sin ganador prematuro.
+- **Sincronización de Cruces con Vista Pública:** Se implementó vinculación directa y selectores de partido para Semifinal 1 (1º vs 3º), Semifinal 2 (2º vs 4º) y Gran Final en el administrador, actualizando correctamente los registros de la base de datos con estado pendiente y marcadores en blanco.
+- **Actualización en Carga de Resultados (Admin):** Se agregó un filtro directo de "Playoffs" en la pestaña de Partidos del panel de administración y distintivos dorados (`🏆 Semifinal 1`, `🏆 Semifinal 2`, `🏆 Gran Final`) para identificar y cargar los resultados de playoffs inmediatamente.
+- **Protección de la Tabla de Posiciones:** Se aseguró que los resultados de partidos de playoffs no contaminen la tabla de posiciones ni alteren la clasificación regular.
+
+---
+
 ## [0.4.1] - 2026-10-06
 
 ### Changed

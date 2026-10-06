@@ -8,13 +8,16 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Check, Loader2, Trash2 } from 'lucide-react';
 
+import { Trophy } from 'lucide-react';
+
 interface MatchScoreFormProps {
   match: Match;
   onSave: (id: string, h: number, a: number, stream?: string, status?: 'pending' | 'finished') => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
+  playoffLabel?: string | null;
 }
 
-export function MatchScoreForm({ match, onSave, onDelete }: MatchScoreFormProps) {
+export function MatchScoreForm({ match, onSave, onDelete, playoffLabel }: MatchScoreFormProps) {
   const [h, setH] = useState(match.home_score?.toString() ?? '');
   const [a, setA] = useState(match.away_score?.toString() ?? '');
   const [stream, setStream] = useState(match.stream_url || '');
@@ -45,7 +48,15 @@ export function MatchScoreForm({ match, onSave, onDelete }: MatchScoreFormProps)
   };
 
   return (
-    <div className="glass-panel rounded-xl p-5 border-l-4 border-l-[#e9c176] hover:bg-[#e9c176]/5 transition-all">
+    <div className={`glass-panel rounded-xl p-5 border-l-4 hover:bg-[#e9c176]/5 transition-all ${
+      playoffLabel ? 'border-l-[#e9c176] bg-gradient-to-r from-[#e9c176]/10 to-transparent' : 'border-l-[#e9c176]'
+    }`}>
+      {playoffLabel && (
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#e9c176]/20 border border-[#e9c176]/40 text-[#e9c176] font-anybody font-black text-[9px] uppercase tracking-wider mb-3">
+          <Trophy className="w-3.5 h-3.5 shrink-0" />
+          <span>{playoffLabel}</span>
+        </div>
+      )}
       <div className="flex justify-between items-center mb-6">
         <span className="font-lexend text-[10px] font-bold text-[#e9c176] uppercase tracking-[0.2em]">
           {new Date(match.match_date).toLocaleDateString()}

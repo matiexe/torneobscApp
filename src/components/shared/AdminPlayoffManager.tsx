@@ -54,9 +54,20 @@ export function AdminPlayoffManager({
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [tieTieSF1Winner, setTieSF1Winner] = useState<string>('');
   const [tieTieSF2Winner, setTieSF2Winner] = useState<string>('');
+  const [selectedSf1Id, setSelectedSf1Id] = useState<string>('');
+  const [selectedSf2Id, setSelectedSf2Id] = useState<string>('');
+  const [selectedFinalId, setSelectedFinalId] = useState<string>('');
 
   const bracket = calculatePlayoffBracket(standings, matches);
   const { sf1Match, sf2Match, finalMatch } = detectPlayoffMatches(matches, standings);
+
+  const effectiveSf1Id = selectedSf1Id || sf1Match?.id || '';
+  const effectiveSf2Id = selectedSf2Id || sf2Match?.id || '';
+  const effectiveFinalId = selectedFinalId || finalMatch?.id || '';
+
+  const activeSf1Match = matches.find((m) => m.id === effectiveSf1Id) || sf1Match;
+  const activeSf2Match = matches.find((m) => m.id === effectiveSf2Id) || sf2Match;
+  const activeFinalMatch = matches.find((m) => m.id === effectiveFinalId) || finalMatch;
 
   const top1 = standings[0];
   const top2 = standings[1];
@@ -96,18 +107,28 @@ export function AdminPlayoffManager({
         throw new Error('No se encontraron los equipos clasificados en la base de datos');
       }
 
-      // Default date for new matches if needed (1 week from today)
+      // Default date for matches if needed (7 days from now)
       const defaultDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
       // 1. Update or create Semifinal 1 (1º vs 3º)
-      if (sf1Match) {
+      if (effectiveSf1Id && effectiveSf1Id !== 'new') {
+        const targetMatch = matches.find((m) => m.id === effectiveSf1Id);
+        const matchDate =
+          targetMatch && new Date(targetMatch.match_date).getTime() > Date.now()
+            ? targetMatch.match_date
+            : defaultDate;
+
         const { error } = await supabase
           .from('matches')
           .update({
             home_team_id: team1.id,
             away_team_id: team3.id,
+            status: 'pending',
+            home_score: null,
+            away_score: null,
+            match_date: matchDate,
           })
-          .eq('id', sf1Match.id);
+          .eq('id', effectiveSf1Id);
         if (error) throw error;
       } else {
         const { error } = await supabase.from('matches').insert({
@@ -115,19 +136,31 @@ export function AdminPlayoffManager({
           away_team_id: team3.id,
           match_date: defaultDate,
           status: 'pending',
+          home_score: null,
+          away_score: null,
         });
         if (error) throw error;
       }
 
       // 2. Update or create Semifinal 2 (2º vs 4º)
-      if (sf2Match) {
+      if (effectiveSf2Id && effectiveSf2Id !== 'new') {
+        const targetMatch = matches.find((m) => m.id === effectiveSf2Id);
+        const matchDate =
+          targetMatch && new Date(targetMatch.match_date).getTime() > Date.now()
+            ? targetMatch.match_date
+            : defaultDate;
+
         const { error } = await supabase
           .from('matches')
           .update({
             home_team_id: team2.id,
             away_team_id: team4.id,
+            status: 'pending',
+            home_score: null,
+            away_score: null,
+            match_date: matchDate,
           })
-          .eq('id', sf2Match.id);
+          .eq('id', effectiveSf2Id);
         if (error) throw error;
       } else {
         const { error } = await supabase.from('matches').insert({
@@ -135,6 +168,8 @@ export function AdminPlayoffManager({
           away_team_id: team4.id,
           match_date: defaultDate,
           status: 'pending',
+          home_score: null,
+          away_score: null,
         });
         if (error) throw error;
       }
@@ -162,14 +197,24 @@ export function AdminPlayoffManager({
     try {
       const defaultDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
 
-      if (finalMatch) {
+      if (effectiveFinalId && effectiveFinalId !== 'new') {
+        const targetMatch = matches.find((m) => m.id === effectiveFinalId);
+        const matchDate =
+          targetMatch && new Date(targetMatch.match_date).getTime() > Date.now()
+            ? targetMatch.match_date
+            : defaultDate;
+
         const { error } = await supabase
           .from('matches')
           .update({
             home_team_id: sf1WinnerTeam.id,
             away_team_id: sf2WinnerTeam.id,
+            status: 'pending',
+            home_score: null,
+            away_score: null,
+            match_date: matchDate,
           })
-          .eq('id', finalMatch.id);
+          .eq('id', effectiveFinalId);
         if (error) throw error;
       } else {
         const { error } = await supabase.from('matches').insert({
@@ -177,6 +222,8 @@ export function AdminPlayoffManager({
           away_team_id: sf2WinnerTeam.id,
           match_date: defaultDate,
           status: 'pending',
+          home_score: null,
+          away_score: null,
         });
         if (error) throw error;
       }
@@ -209,23 +256,27 @@ export function AdminPlayoffManager({
         );
       }
 
-      if (sf1Match) {
+      const targetSf1 = effectiveSf1Id || sf1Match?.id;
+      const targetSf2 = effectiveSf2Id || sf2Match?.id;
+      const targetFinal = effectiveFinalId || finalMatch?.id;
+
+      if (targetSf1) {
         await supabase
           .from('matches')
-          .update({ home_team_id: p1.id, away_team_id: p4.id, status: 'pending', home_score: null, away_score: null })
-          .eq('id', sf1Match.id);
+          .update({ home_team_id: p1.id, away_team_id: p3.id, status: 'pending', home_score: null, away_score: null })
+          .eq('id', targetSf1);
       }
-      if (sf2Match) {
+      if (targetSf2) {
         await supabase
           .from('matches')
-          .update({ home_team_id: p2.id, away_team_id: p3.id, status: 'pending', home_score: null, away_score: null })
-          .eq('id', sf2Match.id);
+          .update({ home_team_id: p2.id, away_team_id: p4.id, status: 'pending', home_score: null, away_score: null })
+          .eq('id', targetSf2);
       }
-      if (finalMatch) {
+      if (targetFinal) {
         await supabase
           .from('matches')
           .update({ home_team_id: f1.id, away_team_id: f2.id, status: 'pending', home_score: null, away_score: null })
-          .eq('id', finalMatch.id);
+          .eq('id', targetFinal);
       }
 
       toast.success('Partidos de playoffs restablecidos a placeholders');
@@ -352,33 +403,101 @@ export function AdminPlayoffManager({
               </Badge>
             </div>
 
-            <div className="space-y-2 text-xs">
-              <div className="p-2.5 rounded-lg bg-black/40 border border-white/5 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] font-bold text-[#e9c176] uppercase block">
-                    Semifinal 1 (1º vs 3º)
-                  </span>
-                  <span className="font-anybody font-bold text-white uppercase">
-                    {top1?.teamName || '1º'} vs {top3?.teamName || '3º'}
-                  </span>
+            <div className="space-y-3 text-xs">
+              {/* Semifinal 1 card */}
+              <div className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-bold text-[#e9c176] uppercase block">
+                      Semifinal 1 (1º vs 3º)
+                    </span>
+                    <span className="font-anybody font-bold text-white uppercase text-sm">
+                      {top1?.teamName || '1º'} vs {top3?.teamName || '3º'}
+                    </span>
+                  </div>
+                  <Badge variant="outline" className={`text-[8px] ${activeSf1Match ? 'border-[#4ade80]/30 text-[#4ade80]' : 'border-white/10 text-[#c5c6cd]'}`}>
+                    {activeSf1Match ? 'Partido vinculado' : 'Se creará en BD'}
+                  </Badge>
                 </div>
-                <Badge variant="outline" className="text-[8px] border-white/10 text-[#c5c6cd]">
-                  {sf1Match ? 'Partido vinculado' : 'Se creará en BD'}
-                </Badge>
+
+                <div className="pt-2 border-t border-white/10 space-y-1">
+                  <div className="flex items-center justify-between text-[10px] font-bold uppercase text-[#c5c6cd]">
+                    <span>Partido asignado en BD:</span>
+                    {activeSf1Match && (
+                      <span className={activeSf1Match.status === 'finished' ? 'text-[#fbbf24]' : 'text-[#4ade80]'}>
+                        {activeSf1Match.status === 'finished' ? '⚠️ Finalizado' : '✓ Pendiente'}
+                      </span>
+                    )}
+                  </div>
+                  <select
+                    value={effectiveSf1Id}
+                    onChange={(e) => setSelectedSf1Id(e.target.value)}
+                    className="w-full bg-[#111415] border border-[#e9c176]/30 text-white rounded-lg px-2 py-1.5 text-xs font-anybody uppercase focus:outline-none focus:border-[#e9c176]"
+                  >
+                    <option value="">-- Seleccionar partido de la BD --</option>
+                    {sf1Match && (
+                      <option value={sf1Match.id}>
+                        ⭐ [Detectado] {sf1Match.home_team?.name} vs {sf1Match.away_team?.name} ({sf1Match.status})
+                      </option>
+                    )}
+                    {matches
+                      .filter((m) => m.id !== sf1Match?.id)
+                      .map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.home_team?.name} vs {m.away_team?.name} - {new Date(m.match_date).toLocaleDateString()} ({m.status})
+                        </option>
+                      ))}
+                    <option value="new">+ Crear nuevo partido en BD</option>
+                  </select>
+                </div>
               </div>
 
-              <div className="p-2.5 rounded-lg bg-black/40 border border-white/5 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] font-bold text-[#e9c176] uppercase block">
-                    Semifinal 2 (2º vs 4º)
-                  </span>
-                  <span className="font-anybody font-bold text-white uppercase">
-                    {top2?.teamName || '2º'} vs {top4?.teamName || '4º'}
-                  </span>
+              {/* Semifinal 2 card */}
+              <div className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-bold text-[#e9c176] uppercase block">
+                      Semifinal 2 (2º vs 4º)
+                    </span>
+                    <span className="font-anybody font-bold text-white uppercase text-sm">
+                      {top2?.teamName || '2º'} vs {top4?.teamName || '4º'}
+                    </span>
+                  </div>
+                  <Badge variant="outline" className={`text-[8px] ${activeSf2Match ? 'border-[#4ade80]/30 text-[#4ade80]' : 'border-white/10 text-[#c5c6cd]'}`}>
+                    {activeSf2Match ? 'Partido vinculado' : 'Se creará en BD'}
+                  </Badge>
                 </div>
-                <Badge variant="outline" className="text-[8px] border-white/10 text-[#c5c6cd]">
-                  {sf2Match ? 'Partido vinculado' : 'Se creará en BD'}
-                </Badge>
+
+                <div className="pt-2 border-t border-white/10 space-y-1">
+                  <div className="flex items-center justify-between text-[10px] font-bold uppercase text-[#c5c6cd]">
+                    <span>Partido asignado en BD:</span>
+                    {activeSf2Match && (
+                      <span className={activeSf2Match.status === 'finished' ? 'text-[#fbbf24]' : 'text-[#4ade80]'}>
+                        {activeSf2Match.status === 'finished' ? '⚠️ Finalizado' : '✓ Pendiente'}
+                      </span>
+                    )}
+                  </div>
+                  <select
+                    value={effectiveSf2Id}
+                    onChange={(e) => setSelectedSf2Id(e.target.value)}
+                    className="w-full bg-[#111415] border border-[#e9c176]/30 text-white rounded-lg px-2 py-1.5 text-xs font-anybody uppercase focus:outline-none focus:border-[#e9c176]"
+                  >
+                    <option value="">-- Seleccionar partido de la BD --</option>
+                    {sf2Match && (
+                      <option value={sf2Match.id}>
+                        ⭐ [Detectado] {sf2Match.home_team?.name} vs {sf2Match.away_team?.name} ({sf2Match.status})
+                      </option>
+                    )}
+                    {matches
+                      .filter((m) => m.id !== sf2Match?.id)
+                      .map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.home_team?.name} vs {m.away_team?.name} - {new Date(m.match_date).toLocaleDateString()} ({m.status})
+                        </option>
+                      ))}
+                    <option value="new">+ Crear nuevo partido en BD</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -491,6 +610,38 @@ export function AdminPlayoffManager({
                     </select>
                   </div>
                 )}
+              </div>
+
+              {/* Gran Final match selector */}
+              <div className="p-2.5 rounded-lg bg-black/40 border border-white/5 space-y-1">
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase text-[#c5c6cd]">
+                  <span>Partido asignado para la Final en BD:</span>
+                  {activeFinalMatch && (
+                    <span className={activeFinalMatch.status === 'finished' ? 'text-[#fbbf24]' : 'text-[#4ade80]'}>
+                      {activeFinalMatch.status === 'finished' ? '⚠️ Finalizado' : '✓ Pendiente'}
+                    </span>
+                  )}
+                </div>
+                <select
+                  value={effectiveFinalId}
+                  onChange={(e) => setSelectedFinalId(e.target.value)}
+                  className="w-full bg-[#111415] border border-[#e9c176]/30 text-white rounded-lg px-2 py-1.5 text-xs font-anybody uppercase focus:outline-none focus:border-[#e9c176]"
+                >
+                  <option value="">-- Seleccionar partido de la BD --</option>
+                  {finalMatch && (
+                    <option value={finalMatch.id}>
+                      ⭐ [Detectado] {finalMatch.home_team?.name} vs {finalMatch.away_team?.name} ({finalMatch.status})
+                    </option>
+                  )}
+                  {matches
+                    .filter((m) => m.id !== finalMatch?.id)
+                    .map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.home_team?.name} vs {m.away_team?.name} - {new Date(m.match_date).toLocaleDateString()} ({m.status})
+                      </option>
+                    ))}
+                  <option value="new">+ Crear nuevo partido en BD</option>
+                </select>
               </div>
             </div>
           </div>

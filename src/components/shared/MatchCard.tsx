@@ -1,18 +1,30 @@
 import { Match } from '@/lib/standings';
-import { Swords } from 'lucide-react';
+import { Swords, Trophy } from 'lucide-react';
 import { getTeamLogo } from '@/lib/utils';
 
 interface MatchCardProps {
   match: Match;
   type: 'result' | 'fixture';
+  playoffLabel?: string | null;
 }
 
-export function MatchCard({ match, type }: MatchCardProps) {
+export function MatchCard({ match, type, playoffLabel }: MatchCardProps) {
   if (type === 'result') {
     return (
-      <div className="match-card-gradient border border-[#44474d]/30 rounded-xl p-4 flex flex-col gap-3">
+      <div className={`match-card-gradient border rounded-xl p-4 flex flex-col gap-3 ${
+        playoffLabel ? 'border-[#e9c176]/50 bg-gradient-to-r from-[#e9c176]/10 to-transparent' : 'border-[#44474d]/30'
+      }`}>
         <div className="flex justify-between items-center text-[10px] text-[#c5c6cd] font-bold uppercase border-b border-[#44474d]/20 pb-2">
-          <span className="text-[#e9c176]">Resultado Final</span>
+          <span className="text-[#e9c176] flex items-center gap-1.5">
+            {playoffLabel ? (
+              <>
+                <Trophy className="w-3.5 h-3.5 text-[#e9c176]" />
+                {playoffLabel}
+              </>
+            ) : (
+              'Resultado Final'
+            )}
+          </span>
           <span>Temporada 2026</span>
         </div>
         <div className="flex items-center justify-between">
@@ -25,7 +37,7 @@ export function MatchCard({ match, type }: MatchCardProps) {
             <span className="text-[#e9c176]/40">-</span>
             <span className="font-anybody text-xl font-bold">{match.away_score}</span>
           </div>
-          <div className="flex flex-col items-center flex-1 overflow-hidden">
+          <div className="flex items-center gap-1 md:gap-2 flex-1 justify-start overflow-hidden">
             <img src={getTeamLogo(match.away_team?.name) || ''} alt="" className="w-8 h-8 object-contain mb-1" />
             <span className="text-[10px] font-bold uppercase truncate w-full text-center">{match.away_team?.name}</span>
           </div>
@@ -35,12 +47,19 @@ export function MatchCard({ match, type }: MatchCardProps) {
   }
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between glass-panel rounded-lg p-3 md:px-6 hover:bg-[#e9c176]/5 transition-colors border-[#e9c176]/10 gap-2 sm:gap-4">
+    <div className={`flex flex-col sm:flex-row items-center justify-between glass-panel rounded-lg p-3 md:px-6 hover:bg-[#e9c176]/5 transition-colors gap-2 sm:gap-4 ${
+      playoffLabel ? 'border-[#e9c176]/40 bg-[#e9c176]/5' : 'border-[#e9c176]/10'
+    }`}>
       {/* Mobile: Top Row with Date/Time */}
-      <div className="w-full sm:w-24 flex justify-between sm:block border-b sm:border-b-0 border-[#e9c176]/10 pb-1 sm:pb-0">
+      <div className="w-full sm:w-32 flex justify-between items-center sm:block border-b sm:border-b-0 border-[#e9c176]/10 pb-1 sm:pb-0">
         <span className="font-lexend text-[10px] md:text-[11px] font-bold text-[#c5c6cd] sm:text-inherit">
           {new Date(match.match_date).toLocaleDateString()}
         </span>
+        {playoffLabel && (
+          <span className="text-[9px] font-anybody font-black uppercase text-[#e9c176] block sm:mt-0.5">
+            {playoffLabel}
+          </span>
+        )}
         <span className="sm:hidden font-lexend text-[10px] font-bold text-[#e9c176]">21:00 HRS</span>
       </div>
 

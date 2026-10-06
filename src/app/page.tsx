@@ -60,6 +60,13 @@ export default function Home() {
   const upcomingMatches = matches.filter(m => m.status === 'pending').slice(1, 5);
   const playoffBracket = calculatePlayoffBracket(standings, matches);
 
+  const getPlayoffLabel = (matchId: string) => {
+    if (matchId === playoffBracket.semifinal1.id) return 'Semifinal 1 (1º vs 3º)';
+    if (matchId === playoffBracket.semifinal2.id) return 'Semifinal 2 (2º vs 4º)';
+    if (matchId === playoffBracket.finalMatch.id) return 'Gran Final';
+    return null;
+  };
+
   const getTeamLogo = (teamName: string | undefined) => {
     if (!teamName) return null;
     const slug = teamName.toLowerCase()
@@ -175,7 +182,7 @@ export default function Home() {
                 </div>
                 <div className="flex flex-col gap-4">
                   {recentResults.map(result => (
-                    <MatchCard key={result.id} match={result} type="result" />
+                    <MatchCard key={result.id} match={result} type="result" playoffLabel={getPlayoffLabel(result.id)} />
                   ))}
                 </div>
               </div>
@@ -191,7 +198,7 @@ export default function Home() {
                 </div>
                 <div className="flex flex-col gap-3">
                   {upcomingMatches.map(match => (
-                    <MatchCard key={match.id} match={match} type="fixture" />
+                    <MatchCard key={match.id} match={match} type="fixture" playoffLabel={getPlayoffLabel(match.id)} />
                   ))}
                 </div>
               </div>
@@ -328,12 +335,12 @@ export default function Home() {
                <h2 className="font-anybody text-4xl font-black gold-gradient-text uppercase mb-2">Resultados Finales</h2>
                <p className="font-anybody text-[#c5c6cd] tracking-[0.2em] uppercase text-xs">Temporada 2026</p>
              </div>
-             <div className="grid gap-4">
+              <div className="grid gap-4">
                 {matches.filter(m => m.status === 'finished').length > 0 ? (
                   matches.filter(m => m.status === 'finished')
                     .sort((a, b) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime())
                     .map(match => (
-                      <MatchCard key={match.id} match={match} type="result" />
+                      <MatchCard key={match.id} match={match} type="result" playoffLabel={getPlayoffLabel(match.id)} />
                     ))
                 ) : (
                   <div className="text-center py-20 glass-panel rounded-xl border-dashed border-[#e9c176]/20">
@@ -341,7 +348,7 @@ export default function Home() {
                     <p className="text-[#c5c6cd] font-anybody uppercase tracking-widest text-sm">No hay resultados registrados aún</p>
                   </div>
                 )}
-             </div>
+              </div>
           </div>
         )}
 
@@ -388,7 +395,7 @@ export default function Home() {
 
                <div className="grid gap-4">
                   {matches.map(match => (
-                    <MatchCard key={match.id} match={match} type="fixture" />
+                    <MatchCard key={match.id} match={match} type="fixture" playoffLabel={getPlayoffLabel(match.id)} />
                   ))}
                </div>
              </div>

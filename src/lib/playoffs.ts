@@ -1,18 +1,84 @@
 import { Match, StandingEntry, Team } from './standings';
 
-export const PLAYOFF_PLACEHOLDERS = [
-  '1RO',
-  '4TO',
-  '2DO',
-  '3ERO',
-  'FINALISTA 1',
-  'FINALISTA 2',
-] as const;
+export function isSeed1(name?: string | null): boolean {
+  if (!name) return false;
+  const n = name.trim().toUpperCase();
+  return (
+    n === '1RO' ||
+    n === '1º' ||
+    n === '1°' ||
+    n === '1ER' ||
+    n === '1ERO' ||
+    n.startsWith('1RO') ||
+    n.startsWith('1º') ||
+    n.startsWith('1°') ||
+    n.startsWith('1ER')
+  );
+}
+
+export function isSeed2(name?: string | null): boolean {
+  if (!name) return false;
+  const n = name.trim().toUpperCase();
+  return (
+    n === '2DO' ||
+    n === '2º' ||
+    n === '2°' ||
+    n === '2' ||
+    n.startsWith('2DO') ||
+    n.startsWith('2º') ||
+    n.startsWith('2°')
+  );
+}
+
+export function isSeed3(name?: string | null): boolean {
+  if (!name) return false;
+  const n = name.trim().toUpperCase();
+  return (
+    n === '3ERO' ||
+    n === '3RO' ||
+    n === '3º' ||
+    n === '3°' ||
+    n.startsWith('3ERO') ||
+    n.startsWith('3RO') ||
+    n.startsWith('3º') ||
+    n.startsWith('3°')
+  );
+}
+
+export function isSeed4(name?: string | null): boolean {
+  if (!name) return false;
+  const n = name.trim().toUpperCase();
+  return (
+    n === '4TO' ||
+    n === '4º' ||
+    n === '4°' ||
+    n.startsWith('4TO') ||
+    n.startsWith('4º') ||
+    n.startsWith('4°')
+  );
+}
+
+export function isFinalistPlaceholder(name?: string | null): boolean {
+  if (!name) return false;
+  const n = name.trim().toUpperCase();
+  return (
+    n.includes('FINALISTA') ||
+    n.includes('FINAL') ||
+    n.startsWith('F1') ||
+    n.startsWith('F2')
+  );
+}
 
 export function isPlaceholderTeam(name?: string | null): boolean {
   if (!name) return true;
-  const upper = name.trim().toUpperCase();
-  return (PLAYOFF_PLACEHOLDERS as readonly string[]).includes(upper);
+  return (
+    isSeed1(name) ||
+    isSeed2(name) ||
+    isSeed3(name) ||
+    isSeed4(name) ||
+    isFinalistPlaceholder(name) ||
+    name.trim().toUpperCase().startsWith('GANADOR')
+  );
 }
 
 export interface PlayoffMatchView {
@@ -48,10 +114,47 @@ export interface PlayoffBracket {
     teamId: string;
     teamName: string;
   } | null;
+  playoffMatchIds: string[];
+}
+
+/**
+ * Searches for a playoff match between two specific teams.
+ * Regular season matches must NEVER be selected as playoff matches.
+ */
+export function findPlayoffMatchBetween(
+  matches: Match[],
+  teamAId?: string,
+  teamBId?: string
+): Match | undefined {
+  if (!teamAId || !teamBId) return undefined;
+
+  const matchesBetween = matches.filter(
+    (m) =>
+      (m.home_team_id === teamAId && m.away_team_id === teamBId) ||
+      (m.home_team_id === teamBId && m.away_team_id === teamAId)
+  );
+
+  if (matchesBetween.length === 0) return undefined;
+
+  // 1. If there is a pending match between them, that is the unplayed playoff match!
+  const pendingMatch = matchesBetween.find((m) => m.status === 'pending');
+  if (pendingMatch) return pendingMatch;
+
+  // 2. If multiple matches exist between them, the latest one by date is the playoff match
+  if (matchesBetween.length > 1) {
+    return [...matchesBetween].sort(
+      (a, b) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime()
+    )[0];
+  }
+
+  // 3. If there is only 1 match between them and it is finished:
+  // In a round-robin league, this is the regular season match, NOT a playoff match.
+  return undefined;
 }
 
 /**
  * Searches for existing playoff matches in the database matches list.
+ * CRITICAL: Regular season matches must NEVER be selected as playoff matches.
  */
 export function detectPlayoffMatches(
   matches: Match[],
@@ -66,51 +169,64 @@ export function detectPlayoffMatches(
   const top3 = standings[2];
   const top4 = standings[3];
 
-  // Helper to match team names (case-insensitive)
-  const hasTeams = (m: Match, nameA: string, nameB: string) => {
-    const h = m.home_team?.name?.toUpperCase().trim();
-    const a = m.away_team?.name?.toUpperCase().trim();
-    const targetA = nameA.toUpperCase().trim();
-    const targetB = nameB.toUpperCase().trim();
-    return (h === targetA && a === targetB) || (h === targetB && a === targetA);
+  const matchHas = (m: Match, testFn: (name?: string | null) => boolean) => {
+    return testFn(m.home_team?.name) || testFn(m.away_team?.name);
   };
 
-  const hasTeamIds = (m: Match, idA?: string, idB?: string) => {
-    if (!idA || !idB) return false;
-    return (
-      (m.home_team_id === idA && m.away_team_id === idB) ||
-      (m.home_team_id === idB && m.away_team_id === idA)
-    );
-  };
+  // 1. Detect Semifinal 1 (1º vs 3º):
+  // First, look for a match that explicitly contains a Seed 1 placeholder (1RO, 1º, etc.)
+  let sf1Match = matches.find((m) => matchHas(m, isSeed1));
 
-  // 1. Detect Semifinal 1 (1RO vs 3ERO, or legacy placeholder)
-  let sf1Match = matches.find((m) => hasTeams(m, '1RO', '3ERO') || hasTeams(m, '1RO', '4TO'));
+  // If no placeholder match exists, search for an assigned playoff match between top1 and top3
   if (!sf1Match && top1 && top3) {
-    // If already generated with actual teams, find match between top 1 and top 3
-    sf1Match = matches.find((m) => hasTeamIds(m, top1.teamId, top3.teamId));
-  }
-  if (!sf1Match && top1 && top4) {
-    sf1Match = matches.find((m) => hasTeamIds(m, top1.teamId, top4.teamId));
+    sf1Match = findPlayoffMatchBetween(matches, top1.teamId, top3.teamId);
   }
 
-  // 2. Detect Semifinal 2 (2DO vs 4TO, or legacy placeholder)
-  let sf2Match = matches.find((m) => hasTeams(m, '2DO', '4TO') || hasTeams(m, '2DO', '3ERO'));
+  // 2. Detect Semifinal 2 (2º vs 4º):
+  // First, look for a match that explicitly contains a Seed 2 placeholder (2DO, 2º, etc.)
+  let sf2Match = matches.find((m) => matchHas(m, isSeed2));
+
+  // If no placeholder match exists, search for an assigned playoff match between top2 and top4
   if (!sf2Match && top2 && top4) {
-    sf2Match = matches.find((m) => hasTeamIds(m, top2.teamId, top4.teamId));
-  }
-  if (!sf2Match && top2 && top3) {
-    sf2Match = matches.find((m) => hasTeamIds(m, top2.teamId, top3.teamId));
+    sf2Match = findPlayoffMatchBetween(matches, top2.teamId, top4.teamId);
   }
 
-  // 3. Detect Final (FINALISTA 1 vs FINALISTA 2)
-  let finalMatch = matches.find((m) => hasTeams(m, 'FINALISTA 1', 'FINALISTA 2'));
+  // 3. Detect Gran Final:
+  let finalMatch = matches.find((m) => matchHas(m, isFinalistPlaceholder));
+
   if (!finalMatch) {
-    // Or match with any FINALISTA placeholder
-    finalMatch = matches.find(
-      (m) =>
-        m.home_team?.name?.toUpperCase().includes('FINALISTA') ||
-        m.away_team?.name?.toUpperCase().includes('FINALISTA')
-    );
+    // If SF1 and SF2 have confirmed winners, look for a match between them
+    const sf1WinnerId =
+      sf1Match?.status === 'finished' && sf1Match.home_score !== null && sf1Match.away_score !== null
+        ? sf1Match.home_score > sf1Match.away_score
+          ? sf1Match.home_team_id
+          : sf1Match.away_score > sf1Match.home_score
+          ? sf1Match.away_team_id
+          : null
+        : null;
+
+    const sf2WinnerId =
+      sf2Match?.status === 'finished' && sf2Match.home_score !== null && sf2Match.away_score !== null
+        ? sf2Match.home_score > sf2Match.away_score
+          ? sf2Match.home_team_id
+          : sf2Match.away_score > sf2Match.home_score
+          ? sf2Match.away_team_id
+          : null
+        : null;
+
+    if (sf1WinnerId && sf2WinnerId) {
+      finalMatch = findPlayoffMatchBetween(matches, sf1WinnerId, sf2WinnerId);
+    }
+
+    if (!finalMatch) {
+      // Find candidate pending match that is neither SF1 nor SF2
+      const candidatePending = matches
+        .filter((m) => m.id !== sf1Match?.id && m.id !== sf2Match?.id && m.status === 'pending')
+        .sort((a, b) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime());
+      if (candidatePending.length > 0) {
+        finalMatch = candidatePending[0];
+      }
+    }
   }
 
   return { sf1Match, sf2Match, finalMatch };
@@ -175,16 +291,17 @@ export function calculatePlayoffBracket(
       : top3?.teamName || '3º Puesto',
     homeTeamId: sf1IsConfirmed ? sf1Match?.home_team_id : top1?.teamId,
     awayTeamId: sf1IsConfirmed ? sf1Match?.away_team_id : top3?.teamId,
-    homeScore: sf1Match?.home_score ?? null,
-    awayScore: sf1Match?.away_score ?? null,
-    status: sf1Match?.status || 'pending',
+    // CRITICAL: Only display scores if the match is confirmed AND finished
+    homeScore: sf1IsConfirmed && sf1Match?.status === 'finished' ? sf1Match.home_score : null,
+    awayScore: sf1IsConfirmed && sf1Match?.status === 'finished' ? sf1Match.away_score : null,
+    status: sf1IsConfirmed ? sf1Match?.status || 'pending' : 'pending',
     matchDate: sf1Match?.match_date,
     streamUrl: sf1Match?.stream_url,
     isConfirmed: sf1IsConfirmed,
     isProjected: !sf1IsConfirmed && Boolean(top1 && top3),
-    winnerTeamId: sf1Winner.winnerId,
-    winnerTeamName: sf1Winner.winnerName,
-    isTie: sf1Winner.isTie,
+    winnerTeamId: sf1IsConfirmed ? sf1Winner.winnerId : null,
+    winnerTeamName: sf1IsConfirmed ? sf1Winner.winnerName : null,
+    isTie: sf1IsConfirmed ? sf1Winner.isTie : false,
     match: sf1Match,
   };
 
@@ -210,16 +327,16 @@ export function calculatePlayoffBracket(
       : top4?.teamName || '4º Puesto',
     homeTeamId: sf2IsConfirmed ? sf2Match?.home_team_id : top2?.teamId,
     awayTeamId: sf2IsConfirmed ? sf2Match?.away_team_id : top4?.teamId,
-    homeScore: sf2Match?.home_score ?? null,
-    awayScore: sf2Match?.away_score ?? null,
-    status: sf2Match?.status || 'pending',
+    homeScore: sf2IsConfirmed && sf2Match?.status === 'finished' ? sf2Match.home_score : null,
+    awayScore: sf2IsConfirmed && sf2Match?.status === 'finished' ? sf2Match.away_score : null,
+    status: sf2IsConfirmed ? sf2Match?.status || 'pending' : 'pending',
     matchDate: sf2Match?.match_date,
     streamUrl: sf2Match?.stream_url,
     isConfirmed: sf2IsConfirmed,
     isProjected: !sf2IsConfirmed && Boolean(top2 && top4),
-    winnerTeamId: sf2Winner.winnerId,
-    winnerTeamName: sf2Winner.winnerName,
-    isTie: sf2Winner.isTie,
+    winnerTeamId: sf2IsConfirmed ? sf2Winner.winnerId : null,
+    winnerTeamName: sf2IsConfirmed ? sf2Winner.winnerName : null,
+    isTie: sf2IsConfirmed ? sf2Winner.isTie : false,
     match: sf2Match,
   };
 
@@ -232,11 +349,15 @@ export function calculatePlayoffBracket(
   );
 
   const projectedFinalHomeName =
-    sf1Winner.winnerName ||
-    (semifinal1.isConfirmed ? `Ganador ${semifinal1.homeTeamName} vs ${semifinal1.awayTeamName}` : 'Ganador SF 1');
+    semifinal1.winnerTeamName ||
+    (semifinal1.isConfirmed
+      ? `Ganador ${semifinal1.homeTeamName} vs ${semifinal1.awayTeamName}`
+      : 'Ganador SF 1');
   const projectedFinalAwayName =
-    sf2Winner.winnerName ||
-    (semifinal2.isConfirmed ? `Ganador ${semifinal2.homeTeamName} vs ${semifinal2.awayTeamName}` : 'Ganador SF 2');
+    semifinal2.winnerTeamName ||
+    (semifinal2.isConfirmed
+      ? `Ganador ${semifinal2.homeTeamName} vs ${semifinal2.awayTeamName}`
+      : 'Ganador SF 2');
 
   const finalMatchView: PlayoffMatchView = {
     id: finalMatch?.id,
@@ -250,29 +371,40 @@ export function calculatePlayoffBracket(
     awayTeamName: finalIsConfirmed
       ? finalMatch?.away_team?.name || 'Finalista 2'
       : projectedFinalAwayName,
-    homeTeamId: finalIsConfirmed ? finalMatch?.home_team_id : sf1Winner.winnerId || undefined,
-    awayTeamId: finalIsConfirmed ? finalMatch?.away_team_id : sf2Winner.winnerId || undefined,
-    homeScore: finalMatch?.home_score ?? null,
-    awayScore: finalMatch?.away_score ?? null,
-    status: finalMatch?.status || 'pending',
+    homeTeamId: finalIsConfirmed
+      ? finalMatch?.home_team_id
+      : semifinal1.winnerTeamId || undefined,
+    awayTeamId: finalIsConfirmed
+      ? finalMatch?.away_team_id
+      : semifinal2.winnerTeamId || undefined,
+    homeScore: finalIsConfirmed && finalMatch?.status === 'finished' ? finalMatch.home_score : null,
+    awayScore: finalIsConfirmed && finalMatch?.status === 'finished' ? finalMatch.away_score : null,
+    status: finalIsConfirmed ? finalMatch?.status || 'pending' : 'pending',
     matchDate: finalMatch?.match_date,
     streamUrl: finalMatch?.stream_url,
     isConfirmed: finalIsConfirmed,
     isProjected: !finalIsConfirmed,
-    winnerTeamId: finalWinner.winnerId,
-    winnerTeamName: finalWinner.winnerName,
-    isTie: finalWinner.isTie,
+    winnerTeamId: finalIsConfirmed ? finalWinner.winnerId : null,
+    winnerTeamName: finalIsConfirmed ? finalWinner.winnerName : null,
+    isTie: finalIsConfirmed ? finalWinner.isTie : false,
     match: finalMatch,
   };
 
   const canGenerateFinal = Boolean(
-    sf1Winner.winnerId && sf2Winner.winnerId && !sf1Winner.isTie && !sf2Winner.isTie
+    semifinal1.winnerTeamId &&
+      semifinal2.winnerTeamId &&
+      !semifinal1.isTie &&
+      !semifinal2.isTie
   );
 
   const champion =
-    finalWinner.winnerId && finalWinner.winnerName
+    finalIsConfirmed && finalWinner.winnerId && finalWinner.winnerName
       ? { teamId: finalWinner.winnerId, teamName: finalWinner.winnerName }
       : null;
+
+  const playoffMatchIds = [sf1Match?.id, sf2Match?.id, finalMatch?.id].filter(
+    (id): id is string => Boolean(id)
+  );
 
   return {
     hasEnoughTeams,
@@ -281,5 +413,6 @@ export function calculatePlayoffBracket(
     finalMatch: finalMatchView,
     canGenerateFinal,
     champion,
+    playoffMatchIds,
   };
 }
